@@ -1,0 +1,23 @@
+#!/bin/bash
+#
+# Uploads the specified *.ino file to Arduino
+#
+# ArduinoCli.app must be a copy of Arduino.app with following changes to Contents/Info.plist:
+# * add -Dapple.awt.UIElement=true to disable bringing UI to front on each invocation
+# * remove -splash:$APP_ROOT/Contents/Java/lib/splash.png to disable splash screen
+
+set -eu
+
+die() {
+    echo "$@" >&2
+    exit 1
+}
+
+[ $# -eq 1 ] || die "Usage: $0 /path/to/file.ino"
+
+path="$(realpath "$1")"
+[[ "$path" == *.ino ]] || die "Only *.ino files are supported."
+
+screen -X -S arduino quit ||:
+
+/Applications/ArduinoCli.app/Contents/MacOS/Arduino --upload "$path"

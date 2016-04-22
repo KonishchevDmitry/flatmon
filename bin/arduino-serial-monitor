@@ -1,0 +1,9 @@
+#!/bin/sh
+#
+# Runs Arduino serial monitor
+#
+
+set -eu
+
+tty="$(arduino-get-tty)"
+exec screen -S arduino "$tty" 9600
