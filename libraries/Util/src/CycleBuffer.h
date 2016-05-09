@@ -1,11 +1,12 @@
-#ifndef CycleBuffer_h
-#define CycleBuffer_h
+#ifndef Util_CycleBuffer_h
+#define Util_CycleBuffer_h
 
 #include <stdlib.h>
 
+#include "Assertion.h"
+
 namespace Util {
 
-// FIXME: assertions
 template<typename T, size_t N>
 class CycleBuffer {
     public:
@@ -24,10 +25,10 @@ class CycleBuffer {
             items_[(start_ + size_ - 1) % capacity()] = value;
         }
 
-        // Calculates median of the items.
-        //
-        // Attention: Implies that buffer is not empty.
-        T median() {
+        // Calculates median of the items
+        ValueType median() {
+            UTIL_ASSERT(!empty());
+
             ValueType items_copy[size_];
 
             if(size_ == capacity()) {
