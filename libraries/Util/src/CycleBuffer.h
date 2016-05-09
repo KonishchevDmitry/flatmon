@@ -4,10 +4,11 @@
 #include <stdlib.h>
 
 #include "Assertion.h"
+#include "Sort.h"
 
 namespace Util {
 
-template<typename T, size_t N>
+template <typename T, size_t N>
 class CycleBuffer {
     public:
         typedef T ValueType;
@@ -29,24 +30,24 @@ class CycleBuffer {
         ValueType median() {
             UTIL_ASSERT(!empty());
 
-            ValueType items_copy[size_];
+            ValueType itemsCopy[size_];
 
             if(size_ == capacity()) {
-                memcpy(items_copy, items_, size_ * sizeof(ValueType));
+                memcpy(itemsCopy, items_, size_ * sizeof(ValueType));
             } else if(start_ + size_ <= capacity()){
-                memcpy(items_copy, items_ + start_, size_ * sizeof(ValueType));
+                memcpy(itemsCopy, items_ + start_, size_ * sizeof(ValueType));
             } else {
-                size_t part_size = capacity() - start_;
-                memcpy(items_copy, items_ + start_, part_size * sizeof(ValueType));
-                memcpy(items_copy + part_size, items_, (size_ - part_size) * sizeof(ValueType));
+                size_t partSize = capacity() - start_;
+                memcpy(itemsCopy, items_ + start_, partSize * sizeof(ValueType));
+                memcpy(itemsCopy + partSize, items_, (size_ - partSize) * sizeof(ValueType));
             }
 
-            qsort(items_copy, size_, sizeof(ValueType), compare_values_);
+            Util::sort(itemsCopy, itemsCopy + size_);
 
             if(size_ % 2)
-                return items_copy[size_ / 2];
+                return itemsCopy[size_ / 2];
             else
-                return (items_copy[size_ / 2] + items_copy[size_ / 2 - 1]) / 2;
+                return (itemsCopy[size_ / 2] + itemsCopy[size_ / 2 - 1]) / 2;
         }
 
         size_t capacity() const {
@@ -65,23 +66,10 @@ class CycleBuffer {
             return size() == capacity();
         }
 
-        // FIXME: HERE
     protected:
-        T items_[N];
+        ValueType items_[N];
         size_t start_;
         size_t size_;
-
-        static int compare_values_(const void* a_ptr, const void* b_ptr) {
-            ValueType a = *reinterpret_cast<const ValueType*>(a_ptr);
-            ValueType b = *reinterpret_cast<const ValueType*>(b_ptr);
-
-            if(a < b)
-                return -1;
-            else if(a > b)
-                return 1;
-            else
-                return 0;
-        }
 };
 
 }
