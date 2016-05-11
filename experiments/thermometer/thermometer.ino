@@ -22,7 +22,6 @@ enum Comfort {
     HOT     = 1 << 0,
     UNKNOWN = 0,
 };
-const char* COMFORT_NAMES[] = {"unknown", "hot", "warm", "norm", "cold"};
 
 class TemperatureSensor {
     public:
@@ -51,6 +50,21 @@ Comfort getComfort(float temperature) {
         return Comfort::WARM;
     else
         return Comfort::HOT;
+}
+
+const char* getComfortName(Comfort comfort) {
+    switch(comfort) {
+        case Comfort::COLD:
+            return "cold";
+        case Comfort::NORM:
+            return "norm";
+        case Comfort::WARM:
+            return "warm";
+        case Comfort::HOT:
+            return "hot";
+        default:
+            return "unknown";
+    }
 }
 
 void setLights(byte lights) {
@@ -100,7 +114,7 @@ void setup() {
         Serial.print("Temperature: ");
         Serial.print(temperature);
         Serial.print(" (");
-        Serial.print(COMFORT_NAMES[comfort]);
+        Serial.print(getComfortName(comfort));
         Serial.println(")");
 
         delay(500);
