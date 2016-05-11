@@ -1,5 +1,5 @@
-#ifndef Util_Constants_h
-#define Util_Constants_h
+#ifndef Util_Constants_hpp
+#define Util_Constants_hpp
 
 namespace Util { namespace Constants {
 

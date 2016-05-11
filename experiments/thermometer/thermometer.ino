@@ -1,8 +1,8 @@
 #include <math.h>
 
 #include <Util.h>
-#include <Util/Constants.h>
-#include <Util/CycleBuffer.h>
+#include <Util/Constants.hpp>
+#include <Util/CycleBuffer.hpp>
 
 namespace Constants = Util::Constants;
 

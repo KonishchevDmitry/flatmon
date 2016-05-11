@@ -3,7 +3,7 @@
 
 #include <cstring>
 
-#include <CycleBuffer.h>
+#include <CycleBuffer.hpp>
 
 using Util::CycleBuffer;
 

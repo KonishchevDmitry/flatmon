@@ -1,9 +1,9 @@
-#ifndef Util_Sort_h
-#define Util_Sort_h
+#ifndef Util_Sort_hpp
+#define Util_Sort_hpp
 
 #include <stdlib.h>
 
-#include "TypeTraits.h"
+#include "TypeTraits.hpp"
 
 namespace Util {
 

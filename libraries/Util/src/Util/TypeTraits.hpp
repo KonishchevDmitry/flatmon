@@ -1,5 +1,5 @@
-#ifndef Util_TypeTraits_h
-#define Util_TypeTraits_h
+#ifndef Util_TypeTraits_hpp
+#define Util_TypeTraits_hpp
 
 namespace Util { namespace TypeTraits {
 

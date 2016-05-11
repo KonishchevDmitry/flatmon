@@ -1,10 +1,10 @@
-#ifndef Util_CycleBuffer_h
-#define Util_CycleBuffer_h
+#ifndef Util_CycleBuffer_hpp
+#define Util_CycleBuffer_hpp
 
 #include <stdlib.h>
 
-#include "Assertion.h"
-#include "Sort.h"
+#include "Assertion.hpp"
+#include "Sort.hpp"
 
 namespace Util {
 

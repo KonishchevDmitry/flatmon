@@ -1,5 +1,5 @@
-#ifndef Util_Assertion_h
-#define Util_Assertion_h
+#ifndef Util_Assertion_hpp
+#define Util_Assertion_hpp
 
 #define UTIL_ASSERT(expression) do { \
     if(!(expression))                \
@@ -13,4 +13,3 @@ void abort() __attribute__((__noreturn__));
 }
 
 #endif
-

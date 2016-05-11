@@ -4,7 +4,7 @@
     #include <cstdlib>
 #endif
 
-#include "Assertion.h"
+#include "Assertion.hpp"
 
 namespace Util {
 
