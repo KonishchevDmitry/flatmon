@@ -14,4 +14,3 @@ const int ANALOG_HIGH = 1023;
 }}
 
 #endif
-
