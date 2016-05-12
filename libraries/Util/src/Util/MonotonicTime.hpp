@@ -12,6 +12,12 @@ class MonotonicTime {
         bool operator==(const MonotonicTime& other);
         bool operator!=(const MonotonicTime& other);
 
+        bool operator<=(const MonotonicTime& other);
+        bool operator>=(const MonotonicTime& other);
+
+        bool operator<(const MonotonicTime& other);
+        bool operator>(const MonotonicTime& other);
+
     private:
         unsigned long epoch_;
         unsigned long time_;

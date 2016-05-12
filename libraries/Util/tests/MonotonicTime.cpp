@@ -16,7 +16,16 @@ BOOST_AUTO_TEST_CASE(mocking) {
 }
 
 BOOST_AUTO_TEST_CASE(comparsion) {
-    BOOST_REQUIRE(MonotonicTime(0, 0) == MonotonicTime(0, 0));
+    BOOST_REQUIRE(MonotonicTime(0, 1) == MonotonicTime(0, 1));
     BOOST_REQUIRE(MonotonicTime(0, 0) != MonotonicTime(0, 1));
     BOOST_REQUIRE(MonotonicTime(0, 0) != MonotonicTime(1, 0));
+
+    BOOST_REQUIRE(MonotonicTime(0, 1) <= MonotonicTime(0, 1));
+    BOOST_REQUIRE(MonotonicTime(0, 1) >= MonotonicTime(0, 1));
+
+    BOOST_REQUIRE(MonotonicTime(0, 1) < MonotonicTime(0, 2));
+    BOOST_REQUIRE(MonotonicTime(0, 1) < MonotonicTime(1, 0));
+
+    BOOST_REQUIRE(MonotonicTime(0, 2) > MonotonicTime(0, 1));
+    BOOST_REQUIRE(MonotonicTime(1, 0) > MonotonicTime(0, 1));
 }

@@ -30,5 +30,31 @@ bool MonotonicTime::operator!=(const MonotonicTime& other) {
     return !(*this == other);
 }
 
+bool MonotonicTime::operator<=(const MonotonicTime& other) {
+    return *this < other || *this == other;
+}
+
+bool MonotonicTime::operator>=(const MonotonicTime& other) {
+    return *this > other || *this == other;
+}
+
+bool MonotonicTime::operator<(const MonotonicTime& other) {
+    if(epoch_ < other.epoch_)
+        return true;
+    else if(epoch_ > other.epoch_)
+        return false;
+    else
+        return time_ < other.time_;
+}
+
+bool MonotonicTime::operator>(const MonotonicTime& other) {
+    if(epoch_ > other.epoch_)
+        return true;
+    else if(epoch_ < other.epoch_)
+        return false;
+    else
+        return time_ > other.time_;
+}
+
 }
 
