@@ -17,11 +17,25 @@ struct Node: public LinkedNodeList<Node> {
 
 std::vector<int> traverse(Node* node) {
     std::vector<int> values;
+    std::vector<int> reversed;
 
-    while(node) {
+    if(!node)
+        return values;
+
+    while(true) {
         values.push_back(node->value);
+        if(!node->next())
+            break;
+
         node = node->next();
     }
+
+    while(node) {
+        reversed.push_back(node->value);
+        node = node->prev();
+    }
+
+    BOOST_REQUIRE_EQUAL_COLLECTIONS(values.begin(), values.end(), reversed.rbegin(), reversed.rend());
 
     return values;
 }

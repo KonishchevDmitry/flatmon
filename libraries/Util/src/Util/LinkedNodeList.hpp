@@ -25,8 +25,13 @@ class LinkedNodeList: TypeTraits::NonCopyable {
 
         void insert(T* node) {
             UTIL_ASSERT(!node->prev_ && !node->next_);
+
             node->prev_ = static_cast<T*>(this);
             node->next_ = this->next_;
+
+            if(this->next_)
+                this->next_->prev_ = node;
+
             this->next_ = node;
         }
 
@@ -34,11 +39,11 @@ class LinkedNodeList: TypeTraits::NonCopyable {
             bool first = prev_ == nullptr;
             *next = next_;
 
-            if(next_)
-                next_->prev_ = prev_;
-
             if(prev_)
                 prev_->next_ = next_;
+
+            if(next_)
+                next_->prev_ = prev_;
 
             prev_ = nullptr;
             next_ = nullptr;
