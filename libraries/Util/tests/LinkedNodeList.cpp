@@ -26,7 +26,7 @@ std::vector<int> traverse(Node* node) {
     return values;
 }
 
-void compare(Node* nodes, std::vector<int> expected) {
+void compare(Node* nodes, const std::vector<int>& expected) {
     std::vector<int> list = traverse(nodes);
     BOOST_REQUIRE_EQUAL_COLLECTIONS(list.begin(), list.end(), expected.begin(), expected.end());
 }
