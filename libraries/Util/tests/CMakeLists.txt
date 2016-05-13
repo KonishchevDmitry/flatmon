@@ -13,7 +13,7 @@ add_library(util STATIC ${UTIL_SRCS})
 
 enable_testing()
 
-foreach(module CycleBuffer MonotonicTime TaskScheduler)
+foreach(module CycleBuffer LinkedNodeList MonotonicTime TaskScheduler)
     add_executable(test_${module} ${module}.cpp)
     target_link_libraries(test_${module} util)
     add_test(${module} test_${module})
