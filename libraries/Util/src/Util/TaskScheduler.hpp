@@ -13,10 +13,12 @@ class TaskScheduler: TypeTraits::NonCopyable {
     public:
         TaskScheduler();
         void addTask(Task* task);
+        void setMaxReactionTime(MonotonicTime::Time time);
         void run();
 
     private:
         Task* tasks_;
+        MonotonicTime::Time maxReactionTime_;
 };
 
 class Task: public LinkedNodeList<Task> {

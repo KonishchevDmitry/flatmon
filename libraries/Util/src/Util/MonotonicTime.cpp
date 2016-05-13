@@ -89,14 +89,8 @@ MonotonicTime& MonotonicTime::operator+=(Time time) {
 }
 
 MonotonicTime& MonotonicTime::operator+=(MonotonicTime time) {
-    this->epoch += time.epoch;
-
-    Time prevTime = this->time;
-
+    this->epoch += time.epoch + (this->time + time.time < this->time);
     this->time += time.time;
-    if(this->time < prevTime)
-        this->epoch += 1;
-
     return *this;
 }
 
