@@ -17,7 +17,6 @@ class MonotonicTime {
         MonotonicTime(Epoch epoch, Time time);
 
         static MonotonicTime now();
-        MonotonicTime& add(Time time);
 
         bool operator==(const MonotonicTime& other) const;
         bool operator!=(const MonotonicTime& other) const;
@@ -29,7 +28,16 @@ class MonotonicTime {
         bool operator>(const MonotonicTime& other) const;
 
         MonotonicTime operator+(Time time) const;
-        void operator+=(Time time);
+        MonotonicTime operator+(MonotonicTime time) const;
+
+        MonotonicTime operator-(Time time) const;
+        MonotonicTime operator-(MonotonicTime time) const;
+
+        MonotonicTime& operator+=(Time time);
+        MonotonicTime& operator+=(MonotonicTime time);
+
+        MonotonicTime& operator-=(Time time);
+        MonotonicTime& operator-=(MonotonicTime time);
 
     public:
         Epoch epoch;

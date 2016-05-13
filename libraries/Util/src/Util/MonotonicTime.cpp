@@ -26,16 +26,6 @@ MonotonicTime MonotonicTime::now() {
     return curTime;
 }
 
-MonotonicTime& MonotonicTime::add(Time time) {
-    Time prevTime = this->time;
-
-    this->time += time;
-    if(this->time < prevTime)
-        this->epoch += 1;
-
-    return *this;
-}
-
 bool MonotonicTime::operator==(const MonotonicTime& other) const {
     return this->epoch == other.epoch && this->time == other.time;
 }
@@ -76,8 +66,48 @@ MonotonicTime MonotonicTime::operator+(Time time) const {
     return newTime;
 }
 
-void MonotonicTime::operator+=(Time time) {
-    this->add(time);
+MonotonicTime MonotonicTime::operator+(MonotonicTime time) const {
+    auto newTime = *this;
+    newTime += time;
+    return newTime;
+}
+
+MonotonicTime MonotonicTime::operator-(Time time) const {
+    auto newTime = *this;
+    newTime -= time;
+    return newTime;
+}
+
+MonotonicTime MonotonicTime::operator-(MonotonicTime time) const {
+    auto newTime = *this;
+    newTime -= time;
+    return newTime;
+}
+
+MonotonicTime& MonotonicTime::operator+=(Time time) {
+    return *this += MonotonicTime(0, time);
+}
+
+MonotonicTime& MonotonicTime::operator+=(MonotonicTime time) {
+    this->epoch += time.epoch;
+
+    Time prevTime = this->time;
+
+    this->time += time.time;
+    if(this->time < prevTime)
+        this->epoch += 1;
+
+    return *this;
+}
+
+MonotonicTime& MonotonicTime::operator-=(Time time) {
+    return *this -= MonotonicTime(0, time);
+}
+
+MonotonicTime& MonotonicTime::operator-=(MonotonicTime time) {
+    this->epoch -= time.epoch + (this->time < time.time);
+    this->time -= time.time;
+    return *this;
 }
 
 #ifndef ARDUINO
