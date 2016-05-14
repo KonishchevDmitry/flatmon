@@ -12,24 +12,39 @@ class Task;
 class TaskScheduler: TypeTraits::NonCopyable {
     public:
         TaskScheduler();
+        ~TaskScheduler();
+
         void addTask(Task* task);
         void setMaxReactionTime(MonotonicTime::Time time);
         void run();
 
     private:
         Task* tasks_;
-        MonotonicTime::Time maxReactionTime_;
+        Task* executing_task_;
+        Task* executing_task_next_;
+
+    friend class Task;
 };
 
 class Task: public LinkedNodeList<Task> {
     public:
+        Task();
+        ~Task();
+
+    public:
         void scheduleAfter(MonotonicTime::Time time);
+        void pause();
+        bool paused();
+        void resume();
+        void remove();
 
     private:
         virtual void execute() = 0;
 
     private:
+        bool paused_;
         MonotonicTime scheduledAt_;
+        TaskScheduler* scheduler_;
 
     friend class TaskScheduler;
 };
