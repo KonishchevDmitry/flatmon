@@ -3,6 +3,8 @@
 
 #include <Arduino.h>
 
+#include <Util/TaskScheduler.hpp>
+
 struct ShiftRegisterLeds {
     public:
         typedef uint8_t LedsValue;
@@ -11,6 +13,7 @@ struct ShiftRegisterLeds {
     public:
         ShiftRegisterLeds(uint8_t dataPin, uint8_t clockPin, uint8_t latchPin);
 
+    public:
         void set(LedsValue leds);
         void update(LedsValue leds, LedsValue mask);
 
@@ -26,15 +29,30 @@ struct LedGroup {
         typedef ShiftRegisterLeds::LedsValue LedsValue;
 
     public:
-        LedGroup(ShiftRegisterLeds* leds, uint8_t startBit, uint8_t ledNum);
+        LedGroup(ShiftRegisterLeds* leds, uint8_t startBit, uint8_t ledsNum);
 
+    public:
         void setLed(uint8_t ledNum);
+
+    public:
+        const uint8_t ledsNum;
 
     private:
         ShiftRegisterLeds* leds_;
         uint8_t startBit_;
-        uint8_t ledNum_;
         LedsValue mask_;
+};
+
+class LedProgressTask: public Util::Task {
+    public:
+        LedProgressTask(LedGroup* ledGroup);
+
+    private:
+        virtual void execute();
+
+    private:
+        LedGroup* ledGroup_;
+        uint8_t curLedNum_;
 };
 
 #endif

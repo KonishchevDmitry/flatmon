@@ -1,7 +1,11 @@
 #include <Arduino.h>
+
 #include <Util/Assertion.hpp>
+#include <Util/Constants.hpp>
 
 #include "Indication.hpp"
+
+namespace Constants = Util::Constants;
 
 ShiftRegisterLeds::ShiftRegisterLeds(uint8_t dataPin, uint8_t clockPin, uint8_t latchPin)
 : dataPin_(dataPin), clockPin_(clockPin), latchPin_(latchPin) {
@@ -35,22 +39,32 @@ void ShiftRegisterLeds::set(LedsValue leds) {
 
 void ShiftRegisterLeds::update(LedsValue leds, LedsValue mask) {
     auto valueWithoutGroup = value_ & ~mask;
-    set(valueWithoutGroup | leds);
+    this->set(valueWithoutGroup | leds);
 }
 
-LedGroup::LedGroup(ShiftRegisterLeds* leds, uint8_t startBit, uint8_t ledNum)
-: leds_(leds), startBit_(startBit), ledNum_(ledNum), mask_(0) {
-    UTIL_ASSERT(startBit_ + ledNum <= ShiftRegisterLeds::MAX_LEDS_NUM);
-    for(uint8_t ledId = 0; ledId < ledNum_; ledId++)
+LedGroup::LedGroup(ShiftRegisterLeds* leds, uint8_t startBit, uint8_t ledsNum)
+: ledsNum(ledsNum), leds_(leds), startBit_(startBit), mask_(0) {
+    UTIL_ASSERT(startBit_ + ledsNum <= ShiftRegisterLeds::MAX_LEDS_NUM);
+    for(uint8_t ledId = 0; ledId < ledsNum; ledId++)
         mask_ |= LedsValue(1) << (startBit_ + ledId);
 }
 
 void LedGroup::setLed(uint8_t ledNum) {
-    UTIL_ASSERT(ledNum <= ledNum_);
+    UTIL_ASSERT(ledNum <= this->ledsNum);
 
     LedsValue value = ledNum
         ? LedsValue(1) << (startBit_ + ledNum - 1)
         : 0;
 
     leds_->update(value, mask_);
+}
+
+LedProgressTask::LedProgressTask(LedGroup* ledGroup)
+: ledGroup_(ledGroup), curLedNum_(0) {
+}
+
+void LedProgressTask::execute() {
+    curLedNum_ = curLedNum_ >= ledGroup_->ledsNum ? 0 : curLedNum_ + 1;
+    ledGroup_->setLed(curLedNum_);
+    this->scheduleAfter(200);
 }

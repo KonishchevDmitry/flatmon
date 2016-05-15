@@ -11,6 +11,8 @@ const int PWM_HIGH = 255;
 const int ANALOG_LOW = 0;
 const int ANALOG_HIGH = 1023;
 
+const long SECOND_MILLIS = 1000;
+
 }}
 
 #endif

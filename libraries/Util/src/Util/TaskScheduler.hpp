@@ -32,14 +32,12 @@ class Task: public LinkedNodeList<Task> {
         ~Task();
 
     public:
+        virtual void execute() = 0;
         void scheduleAfter(MonotonicTime::Time time);
         void pause();
         bool paused();
         void resume();
         void remove();
-
-    private:
-        virtual void execute() = 0;
 
     private:
         bool paused_;
