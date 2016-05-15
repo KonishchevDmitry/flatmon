@@ -1,14 +1,14 @@
 #include <Arduino.h>
 
 #include <Util/Assertion.hpp>
-#include <Util/Constants.hpp>
 
 #include "Indication.hpp"
 
-namespace Constants = Util::Constants;
-
 ShiftRegisterLeds::ShiftRegisterLeds(uint8_t dataPin, uint8_t clockPin, uint8_t latchPin)
 : dataPin_(dataPin), clockPin_(clockPin), latchPin_(latchPin) {
+    pinMode(dataPin, OUTPUT);
+    pinMode(clockPin, OUTPUT);
+    pinMode(latchPin, OUTPUT);
 }
 
 void ShiftRegisterLeds::set(LedsValue leds) {
@@ -66,5 +66,5 @@ LedProgressTask::LedProgressTask(LedGroup* ledGroup)
 void LedProgressTask::execute() {
     curLedNum_ = curLedNum_ >= ledGroup_->ledsNum ? 0 : curLedNum_ + 1;
     ledGroup_->setLed(curLedNum_);
-    this->scheduleAfter(200);
+    this->scheduleAfter(100);
 }

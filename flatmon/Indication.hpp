@@ -47,7 +47,7 @@ class LedProgressTask: public Util::Task {
     public:
         LedProgressTask(LedGroup* ledGroup);
 
-    private:
+    public:
         virtual void execute();
 
     private:
