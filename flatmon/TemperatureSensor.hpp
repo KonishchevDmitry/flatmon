@@ -6,6 +6,7 @@
 #include <Util/CycleBuffer.hpp>
 #include <Util/TaskScheduler.hpp>
 
+#include "Buzzer.hpp"
 #include "Indication.hpp"
 
 class TemperatureSensor: public Util::Task {
@@ -15,21 +16,22 @@ class TemperatureSensor: public Util::Task {
         enum class Comfort: uint8_t {UNKNOWN, COLD, NORMAL, WARM, HOT};
 
     public:
-        TemperatureSensor(Util::TaskScheduler* scheduler, LedGroup* ledGroup, uint8_t sensorPin);
+        TemperatureSensor(uint8_t sensorPin, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer);
 
     public:
         virtual void execute();
 
     private:
-        void onTemperature(float temperature);
+        void onTemperature(float temperature, float smoothedTemperature);
 
     private:
-        LedGroup* ledGroup_;
-        LedProgressTask ledProgress_;
-
         uint8_t sensorPin_;
         Util::CycleBuffer<uint16_t, 10> values_;
         Comfort comfort_;
+
+        LedGroup* ledGroup_;
+        LedProgressTask ledProgress_;
+        Buzzer* buzzer_;
 };
 
 #endif

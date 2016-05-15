@@ -31,30 +31,36 @@ Comfort getComfort(float temperature) {
         return Comfort::HOT;
 }
 
-TemperatureSensor::TemperatureSensor(Util::TaskScheduler* scheduler, LedGroup* ledGroup, uint8_t sensorPin)
-: ledGroup_(ledGroup), ledProgress_(ledGroup), sensorPin_(sensorPin), comfort_(Comfort::UNKNOWN) {
+TemperatureSensor::TemperatureSensor(uint8_t sensorPin, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer)
+: sensorPin_(sensorPin), comfort_(Comfort::UNKNOWN), ledGroup_(ledGroup), ledProgress_(ledGroup), buzzer_(buzzer) {
     scheduler->addTask(&ledProgress_);
     scheduler->addTask(this);
 }
 
 void TemperatureSensor::execute() {
-    values_.add(analogRead(sensorPin_));
-    if(values_.full())
-        this->onTemperature(getTemperature(values_.median()));
+    uint16_t value = analogRead(sensorPin_);
+    values_.add(value);
+
+    if(values_.full()) {
+        float temperature = getTemperature(value);
+        float smoothedTemperature = getTemperature(values_.median());
+        this->onTemperature(temperature, smoothedTemperature);
+    }
 
     this->scheduleAfter(500);
 }
 
-void TemperatureSensor::onTemperature(float temperature) {
+void TemperatureSensor::onTemperature(float temperature, float smoothedTemperature) {
     if(comfort_ == Comfort::UNKNOWN)
         ledProgress_.remove();
 
-    Comfort comfort = getComfort(temperature);
+    Comfort comfort = getComfort(smoothedTemperature);
     if(comfort_ != comfort) {
         ledGroup_->setLed(int(comfort));
         comfort_ = comfort;
-        //notifyComfortChange();
+        buzzer_->notify();
     }
 
-    log("Temperature: ", temperature, " (", COMFORT_NAMES[int(comfort)], ")");
+    log("Temperature: ", temperature, " -> ", smoothedTemperature,
+        " (", COMFORT_NAMES[int(comfort)], ")");
 }
