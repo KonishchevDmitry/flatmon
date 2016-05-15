@@ -23,6 +23,7 @@ class TemperatureSensor: public Util::Task {
 
     private:
         void onTemperature(float temperature, float smoothedTemperature);
+        void onComfortChange(Comfort comfort, bool initialChange);
 
     private:
         uint8_t sensorPin_;

@@ -51,16 +51,21 @@ void TemperatureSensor::execute() {
 }
 
 void TemperatureSensor::onTemperature(float temperature, float smoothedTemperature) {
-    if(comfort_ == Comfort::UNKNOWN)
-        ledProgress_.remove();
-
     Comfort comfort = getComfort(smoothedTemperature);
-    if(comfort_ != comfort) {
-        ledGroup_->setLed(int(comfort));
-        comfort_ = comfort;
-        buzzer_->notify();
-    }
+
+    if(comfort != comfort_)
+        this->onComfortChange(comfort, comfort_ == Comfort::UNKNOWN);
 
     log("Temperature: ", temperature, " -> ", smoothedTemperature,
         " (", COMFORT_NAMES[int(comfort)], ")");
+}
+
+void TemperatureSensor::onComfortChange(Comfort comfort, bool initialChange) {
+    comfort_ = comfort;
+    ledGroup_->setLed(int(comfort));
+
+    if(initialChange)
+        ledProgress_.remove();
+    else
+        buzzer_->notify();
 }
