@@ -7,11 +7,10 @@
 
 using Util::Logging::log;
 namespace Constants = Util::Constants;
-typedef TemperatureSensor::Comfort Comfort;
 
-namespace {
-    const char* COMFORT_NAMES[] = {"unknown", "cold", "normal", "warm", "hot"};
-}
+typedef TemperatureSensor::Comfort Comfort;
+enum class TemperatureSensor::Comfort: uint8_t {UNKNOWN, COLD, NORMAL, WARM, HOT};
+namespace {const char* COMFORT_NAMES[] = {"unknown", "cold", "normal", "warm", "hot"};}
 
 float getTemperature(uint16_t pwmValue) {
     float volts = float(pwmValue) / Constants::ANALOG_HIGH * Constants::VOLTS;

@@ -11,9 +11,7 @@
 
 class TemperatureSensor: public Util::Task {
     public:
-        // Attention: Be careful when changing the enum variants: they are implicitly attached to LEDs and comfort name
-        // mapping logic.
-        enum class Comfort: uint8_t {UNKNOWN, COLD, NORMAL, WARM, HOT};
+        enum class Comfort: uint8_t;
 
     public:
         TemperatureSensor(uint8_t sensorPin, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer);
