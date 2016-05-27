@@ -13,9 +13,9 @@ const int BUZZER_PIN = 11;
 
 const int TEMPERATURE_SENSOR_PIN = 0;
 
-const int SHIFT_REGISTER_DATA_PIN = 10;
-const int SHIFT_REGISTER_CLOCK_PIN = 8;
-const int SHIFT_REGISTER_LATCH_PIN = 9;
+const int SHIFT_REGISTER_DATA_PIN = 10; // SER
+const int SHIFT_REGISTER_CLOCK_PIN = 8; // SRCLK
+const int SHIFT_REGISTER_LATCH_PIN = 9; // RCLK
 
 void setup() {
     Util::Logging::init();
