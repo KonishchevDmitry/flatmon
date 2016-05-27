@@ -15,7 +15,7 @@ class CO2Sensor: public Util::Task {
         enum class Comfort: uint8_t;
 
     public:
-        CO2Sensor(Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer);
+        CO2Sensor(uint8_t sensorRxPin, uint8_t sensorTxPin, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer);
 
     public:
         virtual void execute();
@@ -27,6 +27,7 @@ class CO2Sensor: public Util::Task {
     */
 
     private:
+        SoftwareSerial sensor_;
         //uint8_t sensorPin_;
         Util::CycleBuffer<uint16_t, 10> values_;
         Comfort comfort_;

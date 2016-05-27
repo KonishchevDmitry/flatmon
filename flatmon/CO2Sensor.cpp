@@ -43,9 +43,9 @@ Comfort getComfort(uint16_t concentration) {
         return Comfort::critical;
 }
 
-CO2Sensor::CO2Sensor(Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer)
-: comfort_(Comfort::unknown), ledGroup_(ledGroup), ledProgress_(ledGroup), buzzer_(buzzer) {
-    //scheduler->addTask(&ledProgress_);
+CO2Sensor::CO2Sensor(uint8_t sensorRxPin, uint8_t sensorTxPin, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer)
+: sensor_(sensorTxPin, sensorRxPin), comfort_(Comfort::unknown), ledGroup_(ledGroup), ledProgress_(ledGroup), buzzer_(buzzer) {
+    scheduler->addTask(&ledProgress_);
     scheduler->addTask(this);
 }
 
@@ -91,7 +91,6 @@ void CO2Sensor::onComfortChange(Comfort comfort, bool initialChange) {
 // Example gotten as is from https://geektimes.ru/post/272090/
 
 
-SoftwareSerial mySerial(A0, A1); // A0 - TX, A1 - RX
 
 byte cmd[9] = {0xFF,0x01,0x86,0x00,0x00,0x00,0x00,0x00,0x79};
 unsigned char response[9];

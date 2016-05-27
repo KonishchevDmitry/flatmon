@@ -4,10 +4,11 @@
 #include "Indication.hpp"
 
 ShiftRegisterLeds::ShiftRegisterLeds(uint8_t dataPin, uint8_t clockPin, uint8_t latchPin)
-: dataPin_(dataPin), clockPin_(clockPin), latchPin_(latchPin) {
+: dataPin_(dataPin), clockPin_(clockPin), latchPin_(latchPin), value_(0) {
     pinMode(dataPin, OUTPUT);
     pinMode(clockPin, OUTPUT);
     pinMode(latchPin, OUTPUT);
+    this->set(value_);
 }
 
 void ShiftRegisterLeds::set(LedsValue leds) {
