@@ -1,4 +1,5 @@
 #include <Util/Assertion.hpp>
+#include <Util/Core.hpp>
 
 #include "Buzzer.hpp"
 

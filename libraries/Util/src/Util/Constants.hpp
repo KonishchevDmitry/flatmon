@@ -1,6 +1,8 @@
 #ifndef Util_Constants_hpp
 #define Util_Constants_hpp
 
+#include "Core.hpp"
+
 namespace Util { namespace Constants {
 
 const int VOLTS = 5;

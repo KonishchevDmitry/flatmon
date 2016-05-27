@@ -1,5 +1,6 @@
 #include "Config.hpp"
 
+#include <Util/Core.hpp>
 #include <Util/Constants.hpp>
 #include <Util/Logging.hpp>
 
@@ -89,7 +90,6 @@ void CO2Sensor::onComfortChange(Comfort comfort, bool initialChange) {
 #if 0
 // Example gotten as is from https://geektimes.ru/post/272090/
 
-#include <SoftwareSerial.h>
 
 SoftwareSerial mySerial(A0, A1); // A0 - TX, A1 - RX
 

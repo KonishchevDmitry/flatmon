@@ -1,13 +1,8 @@
 #ifndef Util_LinkedNodeList_hpp
 #define Util_LinkedNodeList_hpp
 
-#ifdef ARDUINO
-    #include <Arduino.h>
-#else
-    #include <cstddef>
-#endif
-
 #include "Assertion.hpp"
+#include "Core.hpp"
 #include "TypeTraits.hpp"
 
 namespace Util {

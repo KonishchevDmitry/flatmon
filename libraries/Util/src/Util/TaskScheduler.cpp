@@ -1,10 +1,8 @@
-#ifdef ARDUINO
-    #include <Arduino.h>
-#else
-    #include <cstddef>
+#ifndef ARDUINO
     #include "Mocks.hpp"
 #endif
 
+#include "Core.hpp"
 #include "MonotonicTime.hpp"
 #include "TaskScheduler.hpp"
 

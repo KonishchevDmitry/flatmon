@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 
+#include "Core.hpp"
 #include "TypeTraits.hpp"
 
 namespace Util {

@@ -5,7 +5,7 @@
     #error UTIL_ENABLE_LOGGING macro must be defined to use logging module.
 #endif
 
-#include <Arduino.h>
+#include "Core.hpp"
 
 namespace Util { namespace Logging {
 

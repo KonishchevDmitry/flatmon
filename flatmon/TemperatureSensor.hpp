@@ -1,8 +1,7 @@
 #ifndef TemperatureSensor_hpp
 #define TemperatureSensor_hpp
 
-#include <Arduino.h>
-
+#include <Util/Core.hpp>
 #include <Util/CycleBuffer.hpp>
 #include <Util/TaskScheduler.hpp>
 

@@ -1,6 +1,5 @@
-#include <Arduino.h>
-
 #include <Util/Assertion.hpp>
+#include <Util/Core.hpp>
 
 #include "Indication.hpp"
 

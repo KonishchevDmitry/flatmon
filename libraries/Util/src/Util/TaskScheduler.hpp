@@ -1,6 +1,7 @@
 #ifndef Util_TaskScheduler_hpp
 #define Util_TaskScheduler_hpp
 
+#include "Core.hpp"
 #include "LinkedNodeList.hpp"
 #include "MonotonicTime.hpp"
 #include "TypeTraits.hpp"

@@ -1,10 +1,5 @@
-#ifdef ARDUINO
-    #include <Arduino.h>
-#else
-    #include <cstdlib>
-#endif
-
 #include "Assertion.hpp"
+#include "Core.hpp"
 
 namespace Util {
 

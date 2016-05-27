@@ -1,10 +1,9 @@
-#ifdef ARDUINO
-    #include <Arduino.h>
-#else
+#include "Core.hpp"
+#include "MonotonicTime.hpp"
+
+#ifndef ARDUINO
     #include "Mocks.hpp"
 #endif
-
-#include "MonotonicTime.hpp"
 
 namespace Util {
 

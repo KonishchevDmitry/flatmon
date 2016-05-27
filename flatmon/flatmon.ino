@@ -1,6 +1,7 @@
 #include "Config.hpp"
 
 #include <Util.h>
+#include <Util/Core.hpp>
 #include <Util/Logging.hpp>
 #include <Util/TaskScheduler.hpp>
 
@@ -25,11 +26,11 @@ void setup() {
     Buzzer buzzer(&scheduler, BUZZER_PIN);
     ShiftRegisterLeds leds(SHIFT_REGISTER_DATA_PIN, SHIFT_REGISTER_CLOCK_PIN, SHIFT_REGISTER_LATCH_PIN);
 
-    LedGroup temperatureLeds(&leds, 4, 4);
-    TemperatureSensor temperatureSensor(TEMPERATURE_SENSOR_PIN, &scheduler, &temperatureLeds, &buzzer);
-
     LedGroup co2Leds(&leds, 0, 4);
     CO2Sensor co2Sensor(&scheduler, &co2Leds, &buzzer);
+
+    LedGroup temperatureLeds(&leds, 4, 4);
+    TemperatureSensor temperatureSensor(TEMPERATURE_SENSOR_PIN, &scheduler, &temperatureLeds, &buzzer);
 
     scheduler.run();
 }

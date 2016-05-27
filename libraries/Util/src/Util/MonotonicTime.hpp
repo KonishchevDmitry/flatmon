@@ -1,6 +1,8 @@
 #ifndef Util_MonotonicTime_hpp
 #define Util_MonotonicTime_hpp
 
+#include "Core.hpp"
+
 #ifndef ARDUINO
 #import <ostream>
 #endif

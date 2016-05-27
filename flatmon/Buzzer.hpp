@@ -1,8 +1,7 @@
 #ifndef Buzzer_hpp
 #define Buzzer_hpp
 
-#include <Arduino.h>
-
+#include <Util/Core.hpp>
 #include <Util/TaskScheduler.hpp>
 
 // Attention: Use of tone() function interferes with PWM output on pins 3 and 11 (on boards other than the Mega).

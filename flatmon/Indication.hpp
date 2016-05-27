@@ -1,8 +1,7 @@
 #ifndef Indication_hpp
 #define Indication_hpp
 
-#include <Arduino.h>
-
+#include <Util/Core.hpp>
 #include <Util/TaskScheduler.hpp>
 
 struct ShiftRegisterLeds {

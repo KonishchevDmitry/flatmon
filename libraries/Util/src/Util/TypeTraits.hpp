@@ -1,6 +1,8 @@
 #ifndef Util_TypeTraits_hpp
 #define Util_TypeTraits_hpp
 
+#include "Core.hpp"
+
 namespace Util { namespace TypeTraits {
 
 class NonCopyable {

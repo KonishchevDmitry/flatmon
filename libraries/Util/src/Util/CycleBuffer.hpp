@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "Assertion.hpp"
+#include "Core.hpp"
 #include "Sort.hpp"
 
 namespace Util {

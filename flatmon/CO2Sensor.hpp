@@ -1,8 +1,9 @@
 #ifndef CO2Sensor_hpp
 #define CO2Sensor_hpp
 
-#include <Arduino.h>
+#include <SoftwareSerial.h>
 
+#include <Util/Core.hpp>
 #include <Util/CycleBuffer.hpp>
 #include <Util/TaskScheduler.hpp>
 
