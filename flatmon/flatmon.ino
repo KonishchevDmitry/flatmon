@@ -5,6 +5,7 @@
 #include <Util/TaskScheduler.hpp>
 
 #include "Buzzer.hpp"
+#include "CO2Sensor.hpp"
 #include "Indication.hpp"
 #include "TemperatureSensor.hpp"
 
@@ -26,6 +27,9 @@ void setup() {
 
     LedGroup temperatureLeds(&leds, 4, 4);
     TemperatureSensor temperatureSensor(TEMPERATURE_SENSOR_PIN, &scheduler, &temperatureLeds, &buzzer);
+
+    LedGroup co2Leds(&leds, 0, 4);
+    CO2Sensor co2Sensor(&scheduler, &co2Leds, &buzzer);
 
     scheduler.run();
 }
