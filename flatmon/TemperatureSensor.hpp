@@ -1,5 +1,5 @@
-#ifndef Temperature_hpp
-#define Temperature_hpp
+#ifndef TemperatureSensor_hpp
+#define TemperatureSensor_hpp
 
 #include <Arduino.h>
 
