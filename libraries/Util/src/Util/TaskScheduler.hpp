@@ -35,6 +35,7 @@ class Task: public LinkedNodeList<Task> {
     public:
         virtual void execute() = 0;
         void scheduleAfter(MonotonicTime::Time time);
+        bool isTimedOut(MonotonicTime::Time timeout);
         void pause();
         bool paused();
         void resume();

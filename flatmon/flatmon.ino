@@ -41,8 +41,9 @@ void setup() {
     LedGroup co2Leds(&leds, 0, 4);
     CO2Sensor co2Sensor(&SOFTWARE_SERIAL, &scheduler, &co2Leds, &buzzer);
 
-    LedGroup temperatureLeds(&leds, 4, 4);
-    TemperatureSensor temperatureSensor(TEMPERATURE_SENSOR_PIN, &scheduler, &temperatureLeds, &buzzer);
+    // FIXME
+    //LedGroup temperatureLeds(&leds, 4, 4);
+    //TemperatureSensor temperatureSensor(TEMPERATURE_SENSOR_PIN, &scheduler, &temperatureLeds, &buzzer);
 
     scheduler.run();
 }

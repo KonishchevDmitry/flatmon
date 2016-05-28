@@ -11,6 +11,10 @@ MonotonicTime::MonotonicTime()
 : MonotonicTime(0, 0) {
 }
 
+MonotonicTime::MonotonicTime(Time time)
+: MonotonicTime(0, time) {
+}
+
 MonotonicTime::MonotonicTime(Epoch epoch, Time time)
 : epoch(epoch), time(time) {
 }
@@ -59,21 +63,9 @@ bool MonotonicTime::operator>(const MonotonicTime& other) const {
         return this->time > other.time;
 }
 
-MonotonicTime MonotonicTime::operator+(Time time) const {
-    auto newTime = *this;
-    newTime += time;
-    return newTime;
-}
-
 MonotonicTime MonotonicTime::operator+(MonotonicTime time) const {
     auto newTime = *this;
     newTime += time;
-    return newTime;
-}
-
-MonotonicTime MonotonicTime::operator-(Time time) const {
-    auto newTime = *this;
-    newTime -= time;
     return newTime;
 }
 
@@ -83,18 +75,10 @@ MonotonicTime MonotonicTime::operator-(MonotonicTime time) const {
     return newTime;
 }
 
-MonotonicTime& MonotonicTime::operator+=(Time time) {
-    return *this += MonotonicTime(0, time);
-}
-
 MonotonicTime& MonotonicTime::operator+=(MonotonicTime time) {
     this->epoch += time.epoch + (this->time + time.time < this->time);
     this->time += time.time;
     return *this;
-}
-
-MonotonicTime& MonotonicTime::operator-=(Time time) {
-    return *this -= MonotonicTime(0, time);
 }
 
 MonotonicTime& MonotonicTime::operator-=(MonotonicTime time) {
