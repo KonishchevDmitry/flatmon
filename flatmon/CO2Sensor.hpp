@@ -1,7 +1,7 @@
 #ifndef CO2Sensor_hpp
 #define CO2Sensor_hpp
 
-#include <SoftwareSerial.h>
+#include <AltSoftSerial.h>
 
 #include <Util/Core.hpp>
 #include <Util/CycleBuffer.hpp>
@@ -13,9 +13,10 @@
 class CO2Sensor: public Util::Task {
     public:
         enum class Comfort: uint8_t;
+        typedef AltSoftSerial SensorSerial;
 
     public:
-        CO2Sensor(uint8_t sensorRxPin, uint8_t sensorTxPin, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer);
+        CO2Sensor(SensorSerial* sensorSerial, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer);
 
     public:
         virtual void execute();
@@ -27,7 +28,7 @@ class CO2Sensor: public Util::Task {
     */
 
     private:
-        SoftwareSerial sensor_;
+        SensorSerial* sensorSerial_;
         //uint8_t sensorPin_;
         Util::CycleBuffer<uint16_t, 10> values_;
         Comfort comfort_;

@@ -43,11 +43,35 @@ Comfort getComfort(uint16_t concentration) {
         return Comfort::critical;
 }
 
-CO2Sensor::CO2Sensor(uint8_t sensorRxPin, uint8_t sensorTxPin, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer)
-: sensor_(sensorTxPin, sensorRxPin), comfort_(Comfort::unknown), ledGroup_(ledGroup), ledProgress_(ledGroup), buzzer_(buzzer) {
+CO2Sensor::CO2Sensor(SensorSerial* sensorSerial, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer)
+: sensorSerial_(sensorSerial), comfort_(Comfort::unknown), ledGroup_(ledGroup), ledProgress_(ledGroup), buzzer_(buzzer) {
+    sensorSerial_->begin(9600);
     scheduler->addTask(&ledProgress_);
     scheduler->addTask(this);
 }
+
+#if 0
+void setup() {
+  Serial.begin(9600);
+  while (!Serial) ; // wait for Arduino Serial Monitor to open
+  Serial.println("AltSoftSerial Test Begin");
+  altSerial.begin(9600);
+  altSerial.println("Hello World");
+}
+
+void loop() {
+  char c;
+
+  if (Serial.available()) {
+    c = Serial.read();
+    altSerial.print(c);
+  }
+  if (altSerial.available()) {
+    c = altSerial.read();
+    Serial.print(c);
+  }
+}
+#endif
 
 void CO2Sensor::execute() {
     /*
@@ -88,17 +112,8 @@ void CO2Sensor::onComfortChange(Comfort comfort, bool initialChange) {
 */
 
 #if 0
-// Example gotten as is from https://geektimes.ru/post/272090/
-
-
-
 byte cmd[9] = {0xFF,0x01,0x86,0x00,0x00,0x00,0x00,0x00,0x79};
 unsigned char response[9];
-
-void setup() {
-  Serial.begin(9600);
-  mySerial.begin(9600);
-}
 
 void loop() {
   mySerial.write(cmd, 9);
