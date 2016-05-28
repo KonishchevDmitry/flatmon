@@ -3,6 +3,7 @@
 #include <AltSoftSerial.h>
 
 #include <Util.h>
+#include <Util/Assertion.hpp>
 #include <Util/Core.hpp>
 #include <Util/Logging.hpp>
 #include <Util/TaskScheduler.hpp>
@@ -46,6 +47,8 @@ void setup() {
     //TemperatureSensor temperatureSensor(TEMPERATURE_SENSOR_PIN, &scheduler, &temperatureLeds, &buzzer);
 
     scheduler.run();
+
+    UTIL_ASSERT(false);
 }
 
 void loop() {

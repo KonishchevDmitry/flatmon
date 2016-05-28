@@ -4,12 +4,15 @@
 #include <AltSoftSerial.h>
 
 #include <Util/Core.hpp>
-#include <Util/CycleBuffer.hpp>
 #include <Util/TaskScheduler.hpp>
 
 #include "Buzzer.hpp"
 #include "Indication.hpp"
 
+// Represents MH-Z19 CO2 sensor.
+//
+// Notice: Sensor automatically calibrates during a few days. During calibration it should be placed outdoor for some
+// time to determine zero point.
 class CO2Sensor: public Util::Task {
     public:
         enum class Comfort: uint8_t;
@@ -27,14 +30,11 @@ class CO2Sensor: public Util::Task {
     private:
         void onReadConcentration();
         void onReadingConcentration();
-    /*
-        void onTemperature(float temperature, float smoothedTemperature);
-        void onComfortChange(Comfort comfort, bool initialChange);
-    */
+        void onCommunicationError();
+        void onComfort(Comfort comfort);
 
     private:
         SensorSerial* sensorSerial_;
-        //Util::CycleBuffer<uint16_t, 10> values_;
         State state_;
         Comfort comfort_;
         byte response_[9];

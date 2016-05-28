@@ -11,7 +11,7 @@ namespace Constants = Util::Constants;
 
 typedef TemperatureSensor::Comfort Comfort;
 enum class TemperatureSensor::Comfort: uint8_t {UNKNOWN, COLD, NORMAL, WARM, HOT};
-namespace {const char* COMFORT_NAMES[] = {"unknown", "cold", "normal", "warm", "hot"};}
+static const char* COMFORT_NAMES[] = {"unknown", "cold", "normal", "warm", "hot"};
 
 float getTemperature(uint16_t pwmValue) {
     float volts = float(pwmValue) / Constants::ANALOG_HIGH * Constants::VOLTS;
@@ -57,7 +57,7 @@ void TemperatureSensor::onTemperature(float temperature, float smoothedTemperatu
         this->onComfortChange(comfort, comfort_ == Comfort::UNKNOWN);
 
     log("Temperature: ", temperature, " -> ", smoothedTemperature,
-        " (", COMFORT_NAMES[int(comfort)], ")");
+        " (", COMFORT_NAMES[int(comfort)], ").");
 }
 
 void TemperatureSensor::onComfortChange(Comfort comfort, bool initialChange) {
