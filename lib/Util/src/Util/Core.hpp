@@ -14,7 +14,8 @@
 // Arduino IDE compiles project and libraries with the same command line options. Enabling all warnings in IDE settings
 // produces warnings from libraries on each compilation. This workaround is used to enable the warnings only for files
 // controlled by the user.
-#pragma GCC diagnostic warning "-Wall"
+// FIXME
+//#pragma GCC diagnostic warning "-Wall"
 
 #endif
 

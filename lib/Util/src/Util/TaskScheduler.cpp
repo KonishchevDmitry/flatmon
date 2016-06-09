@@ -6,6 +6,8 @@
 #include "MonotonicTime.hpp"
 #include "TaskScheduler.hpp"
 
+// FIXME
+int b = 1000000;
 namespace Util {
 
 TaskScheduler::TaskScheduler()
