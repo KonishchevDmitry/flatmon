@@ -23,7 +23,7 @@ AltSoftSerial SOFTWARE_SERIAL;
 const int CO2_SENSOR_RX_PIN = 9;
 const int CO2_SENSOR_TX_PIN = 8;
 
-const int TEMPERATURE_SENSOR_PIN = A2;
+const int TEMPERATURE_SENSOR_PIN = A0;
 
 const int SHIFT_REGISTER_DATA_PIN = 10; // SER
 const int SHIFT_REGISTER_CLOCK_PIN = 3; // SRCLK
@@ -42,9 +42,8 @@ void setup() {
     LedGroup co2Leds(&leds, 0, 4);
     CO2Sensor co2Sensor(&SOFTWARE_SERIAL, &scheduler, &co2Leds, &buzzer);
 
-    // FIXME
-    //LedGroup temperatureLeds(&leds, 4, 4);
-    //TemperatureSensor temperatureSensor(TEMPERATURE_SENSOR_PIN, &scheduler, &temperatureLeds, &buzzer);
+    LedGroup temperatureLeds(&leds, 4, 4);
+    TemperatureSensor temperatureSensor(TEMPERATURE_SENSOR_PIN, &scheduler, &temperatureLeds, &buzzer);
 
     scheduler.run();
 
