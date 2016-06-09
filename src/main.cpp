@@ -1,4 +1,5 @@
 #include "Config.hpp"
+#include <Arduino.h>
 
 #include <AltSoftSerial.h>
 
