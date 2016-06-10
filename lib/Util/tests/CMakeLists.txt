@@ -3,12 +3,12 @@ cmake_minimum_required(VERSION 3.5)
 find_package(Boost COMPONENTS unit_test_framework REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
-set(LIBRARY_PATH ../..)
+set(LIBRARY_PATH ..)
 
 add_compile_options(-std=c++11 -Wall)
-include_directories(${LIBRARY_PATH}/Util/src)
+include_directories(${LIBRARY_PATH})
 
-file(GLOB UTIL_SRCS ${LIBRARY_PATH}/Util/src/Util/*.cpp)
+file(GLOB UTIL_SRCS ${LIBRARY_PATH}/Util/*.cpp)
 add_library(util STATIC ${UTIL_SRCS})
 
 enable_testing()
