@@ -1,5 +1,3 @@
-#include "Config.hpp"
-
 #include <Util/Constants.hpp>
 #include <Util/Core.hpp>
 #include <Util/Logging.hpp>
