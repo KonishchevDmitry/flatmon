@@ -2,6 +2,7 @@
 
 #include <Util.h>
 #include <Util/Assertion.hpp>
+#include <Util/Constants.hpp>
 #include <Util/Core.hpp>
 #include <Util/Logging.hpp>
 #include <Util/TaskScheduler.hpp>
@@ -10,6 +11,8 @@
 #include "CO2Sensor.hpp"
 #include "Indication.hpp"
 #include "TemperatureSensor.hpp"
+
+using Util::Logging::log;
 
 // AltSoftSerial always uses these pins and breaks PWM on the following pins:
 //
@@ -41,10 +44,13 @@ const int SHIFT_REGISTER_DATA_PIN = 10; // SER
 const int SHIFT_REGISTER_CLOCK_PIN = 3; // SRCLK
 const int SHIFT_REGISTER_LATCH_PIN = 2; // RCLK
 
+const int LIGHT_SENSOR_PIN = A1;
+const uint8_t LED_BRIGHTNESS_CONTROLLING_PINS[] = {6};
+
 // Attention: Use of tone() function interferes with PWM output on pins 3 and 11 (on boards other than the Mega).
 const int BUZZER_PIN = 11;
 
-#if 1
+#if 0
 void setup() {
   SOFTWARE_SERIAL.begin(9600);
   Serial.begin(9600);
@@ -67,6 +73,10 @@ void setup() {
 
     Buzzer buzzer(&scheduler, BUZZER_PIN);
     ShiftRegisterLeds leds(SHIFT_REGISTER_DATA_PIN, SHIFT_REGISTER_CLOCK_PIN, SHIFT_REGISTER_LATCH_PIN);
+
+    const size_t ledsNum = sizeof LED_BRIGHTNESS_CONTROLLING_PINS / sizeof *LED_BRIGHTNESS_CONTROLLING_PINS;
+    LedBrightnessRegulator<ledsNum> ledBrightnessRegulator(
+        LIGHT_SENSOR_PIN, LED_BRIGHTNESS_CONTROLLING_PINS, &scheduler);
 
     LedGroup co2Leds(&leds, 0, 4);
     CO2Sensor co2Sensor(&SOFTWARE_SERIAL, &scheduler, &co2Leds, &buzzer);

@@ -42,6 +42,7 @@ void ShiftRegisterLeds::update(LedsValue leds, LedsValue mask) {
     this->set(valueWithoutGroup | leds);
 }
 
+
 LedGroup::LedGroup(ShiftRegisterLeds* leds, uint8_t startBit, uint8_t ledsNum)
 : ledsNum(ledsNum), leds_(leds), startBit_(startBit), mask_(0) {
     UTIL_ASSERT(startBit_ + ledsNum <= ShiftRegisterLeds::MAX_LEDS_NUM);
@@ -58,6 +59,7 @@ void LedGroup::setLed(uint8_t ledNum) {
 
     leds_->update(value, mask_);
 }
+
 
 LedProgressTask::LedProgressTask(LedGroup* ledGroup)
 : ledGroup_(ledGroup), curLedNum_(0) {

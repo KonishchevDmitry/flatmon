@@ -54,4 +54,23 @@ class LedProgressTask: public Util::Task {
         uint8_t curLedNum_;
 };
 
+template <size_t ledsNum>
+class LedBrightnessRegulator: public Util::Task {
+    public:
+        LedBrightnessRegulator(uint8_t lightSensorPin, const uint8_t transistorBasePins[ledsNum],
+                               Util::TaskScheduler* scheduler);
+
+    public:
+        virtual void execute();
+
+    private:
+        uint8_t lightSensorPin_;
+        uint8_t transistorBasePins_[ledsNum];
+    #if UTIL_ENABLE_LOGGING
+        unsigned long lastLogTime_;
+    #endif
+};
+
+#include "Indication.tpp"
+
 #endif
