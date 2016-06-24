@@ -17,4 +17,6 @@ typedef unsigned long TimeMillis;
 // Type which is used to store time in microseconds.
 typedef unsigned long TimeMicros;
 
+size_t getFreeStackMemorySize();
+
 #endif

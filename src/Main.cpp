@@ -59,6 +59,8 @@ const int BUZZER_PIN = 11;
 
 void setup() {
     Util::Logging::init();
+    log("Initializing...");
+
     Util::TaskScheduler scheduler;
 
     // FIXME
@@ -81,9 +83,16 @@ void setup() {
 
         LedGroup temperatureLeds(&leds, 4, 4);
         TemperatureSensor temperatureSensor(TEMPERATURE_SENSOR_PIN, &scheduler, &temperatureLeds, &buzzer);
-
-        scheduler.run();
     }
+
+    size_t freeStackMemorySize = getFreeStackMemorySize();
+    if(freeStackMemorySize < 100) {
+        log("Failed to start: Not enough memory.");
+        UTIL_ASSERT(false);
+    }
+
+    log("Free memory size: ", freeStackMemorySize, ". Starting the device...");
+    scheduler.run();
 
     UTIL_ASSERT(false);
 }
