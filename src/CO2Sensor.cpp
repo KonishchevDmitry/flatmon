@@ -8,36 +8,38 @@
 using Util::Logging::log;
 namespace Constants = Util::Constants;
 
-// It looks like sensor measures CO2 concentration each ~ 6 seconds.
-// It shouldn't be polled more often then once in 10 seconds because in that case it returns strange results.
-static const auto POLLING_PERIOD = 10 * Constants::SECOND_MILLIS;
-static const auto PREHEAT_TIME = DEBUG_MODE ? POLLING_PERIOD : 3 * Constants::MINUTE_MILLIS;
-
 enum class CO2Sensor::State: uint8_t {read, reading};
 
 enum class CO2Sensor::Comfort: uint8_t {unknown, normal, warning, low, critical};
 static const char* COMFORT_NAMES[] = {"unknown", "normal", "warning", "low", "critical"};
 typedef CO2Sensor::Comfort Comfort;
 
-Comfort getComfort(uint16_t concentration) {
-    // CO2 levels explained:
-    // * 300 ppm – normal for village outdoor
-    // * 500 ppm – normal for city outdoor
-    // * 700-1500 ppm – normal for indoor:
-    //   * 1000 ppm - decreased attention, initiative and level of perception
-    //   * 1500 ppm - fatigue, hard to make decisions / work with information
-    //   * 2000 ppm - apathy, headache, chronic fatigue syndrome
+namespace {
+    // It looks like sensor measures CO2 concentration each ~ 6 seconds.
+    // It shouldn't be polled more often then once in 10 seconds because in that case it returns strange results.
+    const auto POLLING_PERIOD = 10 * Constants::SECOND_MILLIS;
+    const auto PREHEAT_TIME = DEBUG_MODE ? POLLING_PERIOD : 3 * Constants::MINUTE_MILLIS;
 
-    uint16_t roundedConcentration = lround(float(concentration) / 100) * 100;
+    Comfort getComfort(uint16_t concentration) {
+        // CO2 levels explained:
+        // * 300 ppm – normal for village outdoor
+        // * 500 ppm – normal for city outdoor
+        // * 700-1500 ppm – normal for indoor:
+        //   * 1000 ppm - decreased attention, initiative and level of perception
+        //   * 1500 ppm - fatigue, hard to make decisions / work with information
+        //   * 2000 ppm - apathy, headache, chronic fatigue syndrome
 
-    if(roundedConcentration < 900)
-        return Comfort::normal;
-    else if(roundedConcentration < 1400)
-        return Comfort::warning;
-    else if(roundedConcentration < 1900)
-        return Comfort::low;
-    else
-        return Comfort::critical;
+        uint16_t roundedConcentration = lround(float(concentration) / 100) * 100;
+
+        if(roundedConcentration < 900)
+            return Comfort::normal;
+        else if(roundedConcentration < 1400)
+            return Comfort::warning;
+        else if(roundedConcentration < 1900)
+            return Comfort::low;
+        else
+            return Comfort::critical;
+    }
 }
 
 CO2Sensor::CO2Sensor(SensorSerial* sensorSerial, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer)

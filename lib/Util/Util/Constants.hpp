@@ -5,16 +5,16 @@
 
 namespace Util { namespace Constants {
 
-static const int VOLTS = 5;
+constexpr int VOLTS = 5;
 
-static const int PWM_LOW = 0;
-static const int PWM_HIGH = 255;
+constexpr int PWM_LOW = 0;
+constexpr int PWM_HIGH = 255;
 
-static const int ANALOG_LOW = 0;
-static const int ANALOG_HIGH = 1023;
+constexpr int ANALOG_LOW = 0;
+constexpr int ANALOG_HIGH = 1023;
 
-static const unsigned long SECOND_MILLIS = 1000;
-static const unsigned long MINUTE_MILLIS = 60 * SECOND_MILLIS;
+constexpr TimeMillis SECOND_MILLIS = 1000;
+constexpr TimeMillis MINUTE_MILLIS = 60 * SECOND_MILLIS;
 
 }}
 

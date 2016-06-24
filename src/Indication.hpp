@@ -67,7 +67,7 @@ class LedBrightnessRegulator: public Util::Task {
         uint8_t lightSensorPin_;
         uint8_t transistorBasePins_[ledsNum];
     #if UTIL_ENABLE_LOGGING
-        unsigned long lastLogTime_;
+        TimeMillis lastLogTime_;
     #endif
 };
 

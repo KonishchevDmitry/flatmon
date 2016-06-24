@@ -1,8 +1,10 @@
 #ifndef ARDUINO
+
+#include "Core.hpp"
 #include "Mocks.hpp"
 
 namespace {
-    unsigned long CUR_TIME = 0;
+    TimeMillis CUR_TIME = 0;
 }
 
 unsigned long millis() {
@@ -15,7 +17,7 @@ void delay(unsigned long time) {
 
 namespace Util { namespace Mocks {
 
-void setTime(unsigned long time) {
+void setTime(TimeMillis time) {
     CUR_TIME = time;
 }
 

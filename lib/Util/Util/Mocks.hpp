@@ -4,6 +4,8 @@
 
 #include <algorithm>
 
+#include "Core.hpp"
+
 using std::min;
 using std::max;
 
@@ -12,7 +14,7 @@ void delay(unsigned long time);
 
 namespace Util { namespace Mocks {
 
-void setTime(unsigned long time);
+void setTime(TimeMillis time);
 
 }}
 

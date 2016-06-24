@@ -11,8 +11,8 @@ namespace Util {
 
 class MonotonicTime {
     public:
-        typedef unsigned long Epoch;
-        typedef unsigned long Time;
+        typedef uint8_t Epoch;
+        typedef TimeMillis Time;
 
     public:
         MonotonicTime();

@@ -40,7 +40,7 @@ void espCommand(const char* command, int timeout = 2000) {
         SOFTWARE_SERIAL.write(command);
         SOFTWARE_SERIAL.write("\r\n");
 
-        unsigned long startTime = millis();
+        TimeMillis startTime = millis();
         while(millis() - startTime < timeout && size < sizeof buf) {
             int data = SOFTWARE_SERIAL.read();
             if(data != -1) {
