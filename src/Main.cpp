@@ -32,16 +32,19 @@ AltSoftSerial SOFTWARE_SERIAL;
 // TXD0/RXD0 - should be connected to Arduino pins through 5V -> 3.3V logic level shifter
 //
 // In order to prevent resets the following capacitors should be included to the scheme:
-// * A large capacitor (470 uF) across the VCC to GND rails.
-// * A 0.1 uF decoupling capacitor across the ESP8266 VCC to GND inputs very close to the pins (within 1.5 cm).
+// * A large capacitor (470uF) across the VCC to GND rails.
+// * A 0.1uF decoupling capacitor across the ESP8266 VCC to GND inputs very close to the pins (within 1.5 cm).
 
-// MH-Z19 notes:
+// MH-Z19 connection notes:
 // Vin - 5V
 // RX/TX - should be connected to Arduino pins through 5V -> 3.3V logic level shifter
 const int CO2_SENSOR_RX_PIN = 9;
 const int CO2_SENSOR_TX_PIN = 8;
 
+// DHT22 connection notes:
+// One 100nF capacitor should be added between VDD and GND for wave filtering.
 const int DHT_22_SENSOR_PIN = 12;
+
 const int TEMPERATURE_SENSOR_PIN = A0;
 
 const int SHIFT_REGISTER_DATA_PIN = 10; // SER
