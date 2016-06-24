@@ -1,8 +1,6 @@
 #ifndef CO2Sensor_hpp
 #define CO2Sensor_hpp
 
-// FIXME
-#include <SoftwareSerial.h>
 #include <AltSoftSerial.h>
 
 #include <Util/Core.hpp>
@@ -18,9 +16,7 @@
 class CO2Sensor: public Util::Task {
     public:
         enum class Comfort: uint8_t;
-        // FIXME
-        // typedef AltSoftSerial SensorSerial;
-        typedef SoftwareSerial SensorSerial;
+        typedef AltSoftSerial SensorSerial;
 
     private:
         enum class State: uint8_t;
