@@ -10,25 +10,42 @@
 
 class Dht22: public Util::Task {
     public:
-        enum class Comfort: uint8_t;
+        enum class HumidityComfort: uint8_t;
+        enum class TemperatureComfort: uint8_t;
+
+    private:
+        enum class State: uint8_t;
 
     public:
-        Dht22(uint8_t sensorPin, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer);
+        Dht22(uint8_t dataPin, Util::TaskScheduler* scheduler,
+              LedGroup* humidityLedGroup, LedGroup* temperatureLedGroup, Buzzer* buzzer);
 
     public:
         virtual void execute();
 
     private:
+        void onStartReading();
+        void onReading();
+        void onError();
+
+        bool waitForLogicLevel(bool level, TimeMicros timeout);
+
+        // FIXME
         void onTemperature(float temperature, float smoothedTemperature);
-        void onComfortChange(Comfort comfort, bool initialChange);
+        void onComfortChange(TemperatureComfort comfort, bool initialChange);
 
     private:
-        uint8_t sensorPin_;
-        Util::CycleBuffer<uint16_t, 10> values_;
-        Comfort comfort_;
+        uint8_t dataPin_;
+        State state_;
 
-        LedGroup* ledGroup_;
-        LedProgressTask ledProgress_;
+        HumidityComfort humidityComfort_;
+        LedGroup* humidityLedGroup_;
+        LedProgressTask humidityLedProgress_;
+
+        TemperatureComfort temperatureComfort_;
+        LedGroup* temperatureLedGroup_;
+        LedProgressTask temperatureLedProgress_;
+
         Buzzer* buzzer_;
 };
 

@@ -93,9 +93,8 @@ void setup() {
 
     log("Free memory size: ", freeStackMemorySize, ". Starting the device...");
     scheduler.run();
-
-    UTIL_ASSERT(false);
 }
 
 void loop() {
+    UTIL_ASSERT(false);
 }
