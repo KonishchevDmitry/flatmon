@@ -11,22 +11,24 @@ typedef TemperatureSensor::Comfort Comfort;
 enum class TemperatureSensor::Comfort: uint8_t {UNKNOWN, COLD, NORMAL, WARM, HOT};
 static const char* COMFORT_NAMES[] = {"unknown", "cold", "normal", "warm", "hot"};
 
-float getTemperature(uint16_t pwmValue) {
-    float volts = float(pwmValue) / Constants::ANALOG_HIGH * Constants::VOLTS;
-    return (volts - 0.5) * 100;
-}
+namespace {
+    float getTemperature(uint16_t pwmValue) {
+        float volts = float(pwmValue) / Constants::ANALOG_HIGH * Constants::VOLTS;
+        return (volts - 0.5) * 100;
+    }
 
-Comfort getComfort(float temperature) {
-    long roundedTemperature = lround(temperature);
+    Comfort getComfort(float temperature) {
+        long roundedTemperature = lround(temperature);
 
-    if(roundedTemperature <= 18)
-        return Comfort::COLD;
-    else if(roundedTemperature <= 24)
-        return Comfort::NORMAL;
-    else if(roundedTemperature <= 26)
-        return Comfort::WARM;
-    else
-        return Comfort::HOT;
+        if(roundedTemperature <= 18)
+            return Comfort::COLD;
+        else if(roundedTemperature <= 24)
+            return Comfort::NORMAL;
+        else if(roundedTemperature <= 26)
+            return Comfort::WARM;
+        else
+            return Comfort::HOT;
+    }
 }
 
 TemperatureSensor::TemperatureSensor(uint8_t sensorPin, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer)
