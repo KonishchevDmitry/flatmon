@@ -1,3 +1,5 @@
+// FIXME: A shitty-written work in progress mockup of communication with ESP8266
+
 #include <Util/Assertion.hpp>
 #include <Util/Constants.hpp>
 #include <Util/Core.hpp>
@@ -20,14 +22,7 @@ enum class Esp8266::Status: uint8_t {
 constexpr TimeMillis SIMPLE_COMMAND_TIMEOUT = 5000; // FIXME
 
 namespace {
-    enum class Response: uint8_t {
-        ok                = 1 << 0,
-        error             = 1 << 1,
-
-        already_connected = 1 << 2,
-        connection_closed = 1 << 3,
-        at_version        = 1 << 4,
-    };
+    enum class Response: uint8_t;
 
     struct ResponseMapping {
         Response id;
@@ -50,6 +45,15 @@ namespace {
     uint8_t operator|=(uint8_t& response, Response id) {
         return response |= uint8_t(id);
     }
+
+    enum class Response: uint8_t {
+        ok                = 1 << 0,
+        error             = 1 << 1,
+
+        already_connected = 1 << 2,
+        connection_closed = 1 << 3,
+        at_version        = 1 << 4,
+    };
 
     ResponseMapping RESPONSES[] = {
         {Response::ok,    "OK"},
@@ -85,7 +89,7 @@ void Esp8266::execute() {
 
     if(state_ == State::checking_connection)
         this->onCheckConnection();
-    if(state_ == State::checking_ap_connection)
+    else if(state_ == State::checking_ap_connection)
         this->onCheckApConnection(pending);
     else if(state_ == State::connecting_to_ap)
         this->onConnectToAp(pending);
@@ -160,7 +164,10 @@ void Esp8266::onConnectToServer(bool pending) {
 void Esp8266::onSendData(bool pending) {
     if(pending) {
         // FIXME: stop flags?
-        return this->sendCommand("AT+CIPSEND=10\r\nabcdefgh", SIMPLE_COMMAND_TIMEOUT);
+        this->sendCommand("AT+CIPSEND=8\r\n", SIMPLE_COMMAND_TIMEOUT);
+        delay(2000);
+        serial_->write("abcdefgh");
+        return;
     }
 
     // if(response_ & Response::connection_closed) {
@@ -236,6 +243,11 @@ void Esp8266::onError() {
 void Esp8266::sendCommand(const char* command, TimeMillis timeout) {
     log(F("Sending ESP8266 command: "), command);
 
+    // FIXME
+    delay(1000);
+    while(serial_->read() != -1)
+        ;
+
     // FIXME: Check buffer is empty
     serial_->write(command);
     serial_->write("\r\n");
@@ -261,7 +273,6 @@ void Esp8266::parseResponse() {
     }
 }
 
-// FIXME: A shitty-written mockup of communication with ESP8266
 #if 0
 void setup() {
   /*

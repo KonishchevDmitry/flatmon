@@ -1,3 +1,5 @@
+// FIXME: A shitty-written work in progress mockup of communication with DHT22
+
 #include <Util/Constants.hpp>
 #include <Util/Core.hpp>
 #include <Util/Logging.hpp>
