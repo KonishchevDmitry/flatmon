@@ -59,18 +59,14 @@ const int BUZZER_PIN = 11;
 
 void setup() {
     Util::Logging::init();
-    log("Initializing...");
+    // FIXME: check F() macro issues: deduplication, release mode.
+    log(F("Initializing..."));
 
     Util::TaskScheduler scheduler;
 
-    // FIXME
-    enum class Mode {NORMAL, ESP8266, DHT22};
-    Mode mode = Mode::DHT22;
-
-    if(mode == Mode::ESP8266) {
+    #if 1
         Esp8266 esp8266(&SOFTWARE_SERIAL, &scheduler);
-        esp8266.execute();
-    } else {
+    #else
         Buzzer buzzer(&scheduler, BUZZER_PIN);
         ShiftRegisterLeds leds(SHIFT_REGISTER_DATA_PIN, SHIFT_REGISTER_CLOCK_PIN, SHIFT_REGISTER_LATCH_PIN);
 
@@ -83,15 +79,15 @@ void setup() {
 
         LedGroup temperatureLeds(&leds, 4, 4);
         TemperatureSensor temperatureSensor(TEMPERATURE_SENSOR_PIN, &scheduler, &temperatureLeds, &buzzer);
-    }
+    #endif
 
     size_t freeStackMemorySize = getFreeStackMemorySize();
     if(freeStackMemorySize < 100) {
-        log("Failed to start: Not enough memory.");
+        log(F("Failed to start: Not enough memory."));
         UTIL_ASSERT(false);
     }
 
-    log("Free memory size: ", freeStackMemorySize, ". Starting the device...");
+    log(F("Free memory size: "), freeStackMemorySize, F(". Starting the device..."));
     scheduler.run();
 }
 

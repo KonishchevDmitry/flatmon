@@ -98,7 +98,7 @@ void Dht22::onReading() {
     pinMode(dataPin_, INPUT);
 
     if(digitalRead(dataPin_) != LOW) {
-        log("Failed to receive start reading response signal from DHT22.");
+        log(F("Failed to receive start reading response signal from DHT22."));
         this->onError();
     }
 
@@ -230,8 +230,8 @@ void Dht22::onTemperature(float temperature, float smoothedTemperature) {
     if(comfort != temperatureComfort_)
         this->onComfortChange(comfort, temperatureComfort_ == TemperatureComfort::unknown);
 
-    log("Temperature: ", temperature, " -> ", smoothedTemperature,
-        " (", TEMPERATURE_COMFORT_NAMES[int(comfort)], ").");
+    log(F("Temperature: "), temperature, F(" -> "), smoothedTemperature,
+        F(" ("), TEMPERATURE_COMFORT_NAMES[int(comfort)], F(")."));
 }
 
 // FIXME

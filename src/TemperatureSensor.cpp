@@ -56,8 +56,8 @@ void TemperatureSensor::onTemperature(float temperature, float smoothedTemperatu
     if(comfort != comfort_)
         this->onComfortChange(comfort, comfort_ == Comfort::UNKNOWN);
 
-    log("Temperature: ", temperature, " -> ", smoothedTemperature,
-        " (", COMFORT_NAMES[int(comfort)], ").");
+    log(F("Temperature: "), temperature, F(" -> "), smoothedTemperature,
+        F(" ("), COMFORT_NAMES[int(comfort)], F(")."));
 }
 
 void TemperatureSensor::onComfortChange(Comfort comfort, bool initialChange) {

@@ -34,7 +34,7 @@ void LedBrightnessRegulator<ledsNum>::execute() {
     #if UTIL_ENABLE_LOGGING
         auto curTime = millis();
         if(curTime - lastLogTime_ >= 5 * Constants::SECOND_MILLIS) {
-            log("Brightness: ", brightness, ".");
+            log(F("Brightness: "), brightness, F("."));
             lastLogTime_ = curTime;
         }
     #endif

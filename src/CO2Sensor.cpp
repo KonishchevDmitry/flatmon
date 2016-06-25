@@ -73,7 +73,7 @@ void CO2Sensor::onReadConcentration() {
     size_t sentBytes = sensorSerial_->write(getGasConcentrationCommand, sizeof getGasConcentrationCommand);
     UTIL_ASSERT(sentBytes == sizeof getGasConcentrationCommand);
 
-    log("CO2 read start time: ", millis()); // FIXME: drop
+    log(F("CO2 read start time: "), millis()); // FIXME: drop
     this->state_ = State::reading;
     this->scheduleAfter(0);
 }
@@ -92,7 +92,7 @@ void CO2Sensor::onReadingConcentration() {
     if(receivedBytes_ < responseSize) {
         // FIXME: find out right timeout
         if(this->isTimedOut(5000)) {
-            log("CO2 sensor has timed out.");
+            log(F("CO2 sensor has timed out."));
             this->onCommunicationError();
         }
         return;
@@ -104,16 +104,16 @@ void CO2Sensor::onReadingConcentration() {
     checksum = byte(0xFF) - checksum + 1;
 
     if(response_[0] != 0xFF || response_[responseSize - 1] != checksum || response_[1] != 0x86) {
-        log("CO2 sensor response validation error.");
+        log(F("CO2 sensor response validation error."));
         this->onCommunicationError();
         return;
     }
 
-    log("CO2 read end time: ", millis()); // FIXME: drop
+    log(F("CO2 read end time: "), millis()); // FIXME: drop
     uint16_t concentration = uint16_t(response_[2]) << 8 | response_[3];
 
     Comfort comfort = getComfort(concentration);
-    log("CO2: ", concentration, " ppm (", COMFORT_NAMES[int(comfort)], ").");
+    log(F("CO2: "), concentration, F(" ppm ("), COMFORT_NAMES[int(comfort)], F(")."));
     this->onComfort(comfort);
 
     this->state_ = State::read;
