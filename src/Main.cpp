@@ -62,6 +62,7 @@ void setup() {
     // FIXME: check F() macro issues: deduplication, release mode.
     log(F("Initializing..."));
 
+    // FIXME: ESP8266 errors indication
     Util::TaskScheduler scheduler;
 
     #if 1

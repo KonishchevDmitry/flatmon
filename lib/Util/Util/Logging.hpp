@@ -1,10 +1,6 @@
 #ifndef Util_Logging_hpp
 #define Util_Logging_hpp
 
-#ifndef UTIL_ENABLE_LOGGING
-    #error UTIL_ENABLE_LOGGING macro must be defined to use logging module.
-#endif
-
 #include "Core.hpp"
 
 namespace Util { namespace Logging {
@@ -30,6 +26,20 @@ void log(T arg, Args... args) {
 #if UTIL_ENABLE_LOGGING
     Serial.print(arg);
     log(args...);
+#endif
+}
+
+template <typename T, typename... Args>
+void vlog(T arg, Args... args) {
+#if UTIL_ENABLE_LOGGING && UTIL_LOG_VERBOSITY > 0
+    log(arg, args...);
+#endif
+}
+
+template <typename T, typename... Args>
+void vvlog(T arg, Args... args) {
+#if UTIL_ENABLE_LOGGING && UTIL_LOG_VERBOSITY > 1
+    log(arg, args...);
 #endif
 }
 

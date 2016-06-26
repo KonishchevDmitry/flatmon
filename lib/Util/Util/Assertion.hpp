@@ -15,6 +15,8 @@
     } while(false)
 #endif
 
+#define UTIL_LOGICAL_ERROR() UTIL_ASSERT(false)
+
 namespace Util {
 
 #if UTIL_VERBOSE_ASSERTS
