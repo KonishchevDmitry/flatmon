@@ -5,9 +5,9 @@
 #include <Util/Core.hpp>
 #include <Util/Logging.hpp>
 
-#include "Config.hpp"
 #include "Esp8266.hpp"
 
+// FIXME: check all below
 using Util::Logging::log;
 using Util::Logging::vlog;
 using Util::Logging::vvlog;
@@ -166,7 +166,7 @@ void Esp8266::onSendRequest() {
 
 void Esp8266::onReceiveResponse() {
     if(status_ == Status::ready)
-        return this->waitCommandCompletion(5 * Constants::SECOND_MILLIS, ResponseInnerType(Response::connection_closed));
+        return this->waitForCommandCompletion(5 * Constants::SECOND_MILLIS, ResponseInnerType(Response::connection_closed));
 
     if(this->hasResponse(Response::connection_closed)) {
         log(F("The request has been successfully sent."));
@@ -255,10 +255,10 @@ void Esp8266::sendCustomCommand(const char* command, TimeMillis timeout, bool ra
     if(!raw)
         serial_->write("\r\n");
 
-    this->waitCommandCompletion(timeout, responseStopFlags);
+    this->waitForCommandCompletion(timeout, responseStopFlags);
 }
 
-void Esp8266::waitCommandCompletion(TimeMillis timeout, ResponseInnerType responseStopFlags) {
+void Esp8266::waitForCommandCompletion(TimeMillis timeout, ResponseInnerType responseStopFlags) {
     commandStartTime_ = millis();
     commandTimeout_ = timeout;
     responseStopFlags_ = responseStopFlags;

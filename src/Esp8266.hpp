@@ -37,20 +37,21 @@ class Esp8266: public Util::Task {
 
         void sendCommand(const char* command, TimeMillis timeout=COMMAND_TIMEOUT);
         void sendCustomCommand(const char* command, TimeMillis timeout, bool raw, ResponseInnerType responseStopFlags);
-        void waitCommandCompletion(TimeMillis timeout, ResponseInnerType responseStopFlags);
+        void waitForCommandCompletion(TimeMillis timeout, ResponseInnerType responseStopFlags);
         void parseResponse();
         bool hasResponse(Response response);
 
     private:
         AltSoftSerial* serial_;
-        char buf_[100]; // FIXME: size
 
         State state_;
-
         Status status_;
-        ResponseInnerType responseStopFlags_;
-        TimeMillis commandStartTime_;
+
         TimeMillis commandTimeout_;
+        TimeMillis commandStartTime_;
+        ResponseInnerType responseStopFlags_;
+
+        char buf_[100]; // FIXME: adjust size
         size_t responseSize_;
         ResponseInnerType response_;
 };
