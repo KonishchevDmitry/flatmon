@@ -7,7 +7,6 @@
 
 #include "Esp8266.hpp"
 
-// FIXME: check all below
 using Util::Logging::log;
 using Util::Logging::vlog;
 using Util::Logging::vvlog;
@@ -15,108 +14,120 @@ using Util::Logging::vvlog;
 namespace Constants = Util::Constants;
 
 enum class Esp8266::State: uint8_t {
-    checking_esp_connection,
-    connecting_to_server,
-    starting_request_sending,
-    sending_request,
-    receiving_response,
-    closing_connection,
+    check_esp_connection,
+    connect_to_server,
+    start_request_sending,
+    send_request,
+    receive_response,
+    close_connection,
+};
+Esp8266::StateHandler Esp8266::stateHandlers_[] = {
+    &Esp8266::onCheckEspConnection,
+    &Esp8266::onConnectToServer,
+    &Esp8266::onStartRequestSending,
+    &Esp8266::onSendRequest,
+    &Esp8266::onReceiveResponse,
+    &Esp8266::onCloseConnection,
 };
 
 enum class Esp8266::Status: uint8_t {
-    ready, command_in_process, command_processed,
+    pending, in_process, processed,
 };
 
-typedef Esp8266::Response Response;
-typedef Esp8266::ResponseInnerType ResponseInnerType;
-
 namespace {
-    struct ResponseMapping {
-        Response id;
-        const char* text;
-        uint8_t size;
+    typedef Esp8266::Response Response;
+    typedef Esp8266::Responses Responses;
 
-        ResponseMapping(Response id, const char* text)
-        : id(id), text(text), size(strlen(text)) {
-        }
+    class ResponseMapping {
+        public:
+            Response response;
+
+        private:
+            const char* text;
+            uint8_t size;
+            bool partial;
+
+        public:
+            ResponseMapping(Response response, const char* text, bool partial=false)
+            : response(response), text(text), size(strlen(text)), partial(partial) {
+            }
+
+            bool matches(const char* responseLine, size_t size) {
+                return (this->size == size || (partial && this->size <= size)) &&
+                       !memcmp(this->text, responseLine, this->size);
+            }
     };
 
-    ResponseInnerType operator|(Response id1, Response id2) {
-        return ResponseInnerType(id1) | ResponseInnerType(id2);
+    Responses operator|(Response response1, Response response2) {
+        return Responses(response1) | Responses(response2);
     }
 
-    ResponseInnerType operator&(ResponseInnerType response, Response id) {
-        return response & ResponseInnerType(id);
+    Responses operator&(Responses responses, Response response) {
+        return responses & Responses(response);
     }
 
-    ResponseInnerType operator|=(ResponseInnerType& response, Response id) {
-        return response |= ResponseInnerType(id);
+    Responses operator|=(Responses& responses, Response response) {
+        return responses |= Responses(response);
     }
-
 }
 
-enum class Esp8266::Response: ResponseInnerType {
+enum class Esp8266::Response: Responses {
     ok                = 1 << 0,
     error             = 1 << 1,
     timed_out         = 1 << 2,
 
-    already_connected = 1 << 3,
-    connection_closed = 1 << 4,
-    at_version        = 1 << 5,
-    send_ok           = 1 << 6,
+    at_version        = 1 << 3,
+    already_connected = 1 << 4,
+    send_ok           = 1 << 5,
+    connection_closed = 1 << 6,
 };
 static ResponseMapping RESPONSES[] = {
     {Response::ok,    "OK"},
     {Response::error, "ERROR"},
 
+    {Response::at_version,        "AT version:0.40.0.0", true},
     {Response::already_connected, "ALREADY CONNECTED"},
-    {Response::connection_closed, "CLOSED"},
-    {Response::at_version,        "AT version:0.40.0.0(Aug  8 2015 14:45:58)"},
     {Response::send_ok,           "SEND OK"},
+    {Response::connection_closed, "CLOSED"},
 };
 
-Esp8266::Esp8266(AltSoftSerial* serial, Util::TaskScheduler* scheduler)
-: serial_(serial), state_(State::checking_esp_connection), status_(Status::ready) {
-    // FIXME: buffer sizes
+Esp8266::Esp8266(Serial* serial, Util::TaskScheduler* scheduler)
+: serial_(serial), connectionOpened_(false) {
+    // FIXME: adjust buffer sizes
     serial_->begin(9600);
     scheduler->addTask(this);
-    this->scheduleAfter(3000); // FIXME
+    this->scheduleNextDataSending();
 }
 
 void Esp8266::setState(State state) {
     state_ = state;
-    status_ = Status::ready;
+    status_ = Status::pending;
+}
+
+void Esp8266::scheduleNextDataSending() {
+    this->setState(State::check_esp_connection);
+    this->scheduleAfter(this->DATA_SENDING_PERIOD);
 }
 
 void Esp8266::execute() {
-    if(status_ == Status::command_in_process)
-        return this->onProcessCommand();
-
-    if(state_ == State::checking_esp_connection)
-        this->onCheckEspConnection();
-    else if(state_ == State::connecting_to_server)
-        this->onConnectToServer();
-    else if(state_ == State::starting_request_sending)
-        this->onStartRequestSending();
-    else if(state_ == State::sending_request)
-        this->onSendRequest();
-    else if(state_ == State::receiving_response)
-        this->onReceiveResponse();
-    else if(state_ == State::closing_connection)
-        this->onCloseConnection();
-    else
-        UTIL_LOGICAL_ERROR();
+    if(status_ == Status::in_process) {
+        this->onProcessCommand();
+    } else {
+        size_t handlerId = size_t(state_);
+        UTIL_ASSERT(handlerId < sizeof stateHandlers_ / sizeof *stateHandlers_);
+        (this->*stateHandlers_[handlerId])();
+    }
 }
 
 void Esp8266::onCheckEspConnection() {
-    if(status_ == Status::ready) {
+    if(status_ == Status::pending) {
         log(F("Checking connection to ESP8266..."));
         return this->sendCommand("AT+GMR");
     }
 
     if(this->hasResponse(Response::ok) && this->hasResponse(Response::at_version)) {
-        log(F("ESP8266 connection has established. Connecting to server..."));
-        return this->setState(State::connecting_to_server);
+        log(F("ESP8266 connection is working. Connecting to server..."));
+        return this->setState(State::connect_to_server);
     }
 
     log(F("ESP8266 connection test failed."));
@@ -124,16 +135,18 @@ void Esp8266::onCheckEspConnection() {
 }
 
 void Esp8266::onConnectToServer() {
-    // FIXME: iptables
-    if(status_ == Status::ready)
+    // FIXME: port, iptables
+    if(status_ == Status::pending)
         return this->sendCommand(R"(AT+CIPSTART="TCP","server.lan",8000)", 3 * Constants::SECOND_MILLIS);
 
     if(this->hasResponse(Response::ok)) {
+        connectionOpened_ = true;
         log(F("Connected to server. Sending the request..."));
-        this->setState(State::starting_request_sending);
+        this->setState(State::start_request_sending);
     } else if(this->hasResponse(Response::already_connected)) {
+        connectionOpened_ = true;
         log(F("Connection to server is already opened. Aborting request sending..."));
-        this->setState(State::closing_connection);
+        this->onError();
     } else {
         log(F("Failed to open connection to server."));
         this->onError();
@@ -141,53 +154,75 @@ void Esp8266::onConnectToServer() {
 }
 
 void Esp8266::onStartRequestSending() {
-    if(status_ == Status::ready)
+    if(status_ == Status::pending)
         return this->sendCommand("AT+CIPSEND=8");
 
     if(this->hasResponse(Response::ok)) {
-        this->setState(State::sending_request);
+        this->setState(State::send_request);
     } else {
-        log(F("Failed to establish connection to server. Aborting request sending..."));
-        this->setState(State::closing_connection);
+        log(F("Failed to start request sending operation."));
+        this->onError();
     }
 }
 
 void Esp8266::onSendRequest() {
-    if(status_ == Status::ready)
+    if(status_ == Status::pending)
+        // FIXME: deprecate sendCustomCommand
         return this->sendCustomCommand("abcdefgh", COMMAND_TIMEOUT, true, Response::error | Response::send_ok);
 
     if(this->hasResponse(Response::send_ok)) {
-        this->setState(State::receiving_response);
+        this->setState(State::receive_response);
     } else {
         log(F("Failed to send request to server."));
-        this->setState(State::closing_connection);
+        this->onError();
     }
 }
 
 void Esp8266::onReceiveResponse() {
-    if(status_ == Status::ready)
-        return this->waitForCommandCompletion(5 * Constants::SECOND_MILLIS, ResponseInnerType(Response::connection_closed));
+    // FIXME: check HTTP response
+    if(status_ == Status::pending)
+        return this->waitForCommandCompletion(5 * Constants::SECOND_MILLIS, Responses(Response::connection_closed));
 
     if(this->hasResponse(Response::connection_closed)) {
+        connectionOpened_ = false;
         log(F("The request has been successfully sent."));
-        this->onError(); // FIXME
+        this->scheduleNextDataSending();
     } else {
         log(F("Failed to receive response from server."));
-        this->setState(State::closing_connection);
+        this->onError();
     }
+}
+
+void Esp8266::onError() {
+    // FIXME: count sessions with errors
+    if(connectionOpened_)
+        this->setState(State::close_connection);
+    else
+        this->scheduleNextDataSending();
 }
 
 void Esp8266::onCloseConnection() {
-    if(status_ == Status::ready) {
-        return this->sendCommand("AT+CIPCLOSE");
+    if(status_ == Status::pending) {
+        connectionOpened_ = false;
+        return this->sendCustomCommand("AT+CIPCLOSE", COMMAND_TIMEOUT, false,
+                                       Response::connection_closed | Response::error);
     }
 
-    // FIXME
-    this->onError();
+    if(this->hasResponse(Response::connection_closed)) {
+        this->scheduleNextDataSending();
+    } else {
+        log(F("Failed to close connection to server."));
+        this->onError();
+    }
 }
 
+// FIXME: check all below
 void Esp8266::onProcessCommand() {
-    while(int data = serial_->read()) {
+    // FIXME: drop after buffer size adjustment
+    static size_t maxResponseSize = 0;
+
+    while(true) {
+        int data = serial_->read();
         if(data == -1)
             break;
 
@@ -196,17 +231,19 @@ void Esp8266::onProcessCommand() {
 
         if(data == '\r') {
             this->parseResponse();
+            maxResponseSize = max(maxResponseSize, responseSize_);
 
             buf_[min(responseSize_, sizeof buf_ - 1)] = '\0';
             vvlog(F("ESP8266: "), buf_);
 
-            if(response_ & responseStopFlags_) {
-                if(response_ & responseStopFlags_ & Response::error)
+            if(responses_ & commandProcessedResponses_) {
+                if(responses_ & commandProcessedResponses_ & Response::error)
                     vlog(F("ESP8266 command failed. Execution time: "), millis() - commandStartTime_, F("."));
                 else
                     vlog(F("ESP8266 command succeeded. Execution time: "), millis() - commandStartTime_, F("."));
 
-                status_ = Status::command_processed;
+                status_ = Status::processed;
+                log("Max response size: ", maxResponseSize);
                 return;
             }
 
@@ -225,24 +262,19 @@ void Esp8266::onProcessCommand() {
 
     if(millis() - commandStartTime_ >= commandTimeout_) {
         vlog(F("ESP8266 command has timed out."));
-        response_ |= Response::timed_out;
-        status_ = Status::command_processed;
+        responses_ |= Response::timed_out;
+        status_ = Status::processed;
         return;
     }
 
     // FIXME: delay
 }
 
-void Esp8266::onError() {
-    this->setState(State::checking_esp_connection);
-    this->scheduleAfter(20 * Constants::SECOND_MILLIS);
-}
-
 void Esp8266::sendCommand(const char* command, TimeMillis timeout) {
     this->sendCustomCommand(command, timeout, false, Response::ok | Response::error);
 }
 
-void Esp8266::sendCustomCommand(const char* command, TimeMillis timeout, bool raw, ResponseInnerType responseStopFlags) {
+void Esp8266::sendCustomCommand(const char* command, TimeMillis timeout, bool raw, Responses commandProcessedResponses) {
     vlog(F("Sending ESP8266 command: "), command);
 
     // FIXME
@@ -250,22 +282,27 @@ void Esp8266::sendCustomCommand(const char* command, TimeMillis timeout, bool ra
     while(serial_->read() != -1)
         ;
 
+    static size_t maxCommandSize = 0;
+
     // FIXME: Check buffer size
     serial_->write(command);
     if(!raw)
         serial_->write("\r\n");
 
-    this->waitForCommandCompletion(timeout, responseStopFlags);
+    maxCommandSize = max(maxCommandSize, strlen(command));
+    log("Max command size: ", maxCommandSize);
+
+    this->waitForCommandCompletion(timeout, commandProcessedResponses);
 }
 
-void Esp8266::waitForCommandCompletion(TimeMillis timeout, ResponseInnerType responseStopFlags) {
+void Esp8266::waitForCommandCompletion(TimeMillis timeout, Responses commandProcessedResponses) {
     commandStartTime_ = millis();
     commandTimeout_ = timeout;
-    responseStopFlags_ = responseStopFlags;
+    commandProcessedResponses_ = commandProcessedResponses;
     responseSize_ = 0;
-    response_ = 0;
+    responses_ = 0;
 
-    status_ = Status::command_in_process;
+    status_ = Status::in_process;
     // FIXME: delay
 }
 
@@ -274,13 +311,14 @@ void Esp8266::parseResponse() {
         return;
 
     for(ResponseMapping& mapping : RESPONSES) {
-        if(mapping.size == responseSize_ && !memcmp(mapping.text, buf_, mapping.size)) {
-            response_ |= mapping.id;
+        // FIXME
+        if(mapping.matches(buf_, responseSize_)) {
+            responses_ |= mapping.response;
             return;
         }
     }
 }
 
 bool Esp8266::hasResponse(Response response) {
-    return response_ & response;
+    return responses_ & response;
 }

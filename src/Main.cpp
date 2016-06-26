@@ -67,7 +67,6 @@ void setup() {
 
     #if 1
         Esp8266 esp8266(&SOFTWARE_SERIAL, &scheduler);
-        esp8266.scheduleAfter(3000); // FIXME
     #else
         Buzzer buzzer(&scheduler, BUZZER_PIN);
         ShiftRegisterLeds leds(SHIFT_REGISTER_DATA_PIN, SHIFT_REGISTER_CLOCK_PIN, SHIFT_REGISTER_LATCH_PIN);
