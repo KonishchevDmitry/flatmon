@@ -67,6 +67,7 @@ void setup() {
 
     #if 1
         Esp8266 esp8266(&SOFTWARE_SERIAL, &scheduler);
+        esp8266.scheduleAfter(3000); // FIXME
     #else
         Buzzer buzzer(&scheduler, BUZZER_PIN);
         ShiftRegisterLeds leds(SHIFT_REGISTER_DATA_PIN, SHIFT_REGISTER_CLOCK_PIN, SHIFT_REGISTER_LATCH_PIN);
@@ -82,16 +83,13 @@ void setup() {
         TemperatureSensor temperatureSensor(TEMPERATURE_SENSOR_PIN, &scheduler, &temperatureLeds, &buzzer);
     #endif
 
-    size_t freeStackMemorySize = getFreeStackMemorySize();
-    if(freeStackMemorySize < 100) {
-        log(F("Failed to start: Not enough memory."));
-        UTIL_ASSERT(false);
-    }
+    size_t freeMemorySize = getStackFreeMemorySize();
+    UTIL_ASSERT(freeMemorySize > 100, F("Failed to start: Not enough memory."));
+    log(F("Free memory size: "), freeMemorySize, F(" bytes. Starting the device..."));
 
-    log(F("Free memory size: "), freeStackMemorySize, F(". Starting the device..."));
     scheduler.run();
 }
 
 void loop() {
-    UTIL_ASSERT(false);
+    UTIL_LOGICAL_ERROR();
 }
