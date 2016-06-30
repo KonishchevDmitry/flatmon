@@ -21,6 +21,7 @@ class Esp8266: public Util::Task {
         typedef void (Esp8266::* StateHandler)();
 
         static constexpr TimeMillis DATA_SENDING_PERIOD = Util::Constants::MINUTE_MILLIS / 6; // FIXME
+        static constexpr TimeMillis COMMAND_EXECUTION_CHECK_PERIOD = 0; // FIXME: Adjust by average command execution time
         static constexpr TimeMillis COMMAND_TIMEOUT = 500;
 
     public:
@@ -40,6 +41,7 @@ class Esp8266: public Util::Task {
         void onReceiveResponse();
         void onCloseConnection();
         void onProcessCommand();
+        bool onResponse();
         void onError();
 
         void sendCommand(const char* command, TimeMillis timeout=COMMAND_TIMEOUT);

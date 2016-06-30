@@ -1,5 +1,3 @@
-// FIXME: A shitty-written work in progress mockup of communication with ESP8266
-
 #include <Util/Assertion.hpp>
 #include <Util/Constants.hpp>
 #include <Util/Core.hpp>
@@ -52,8 +50,8 @@ namespace {
             : response(response), text(text), size(strlen(text)), partial(partial) {
             }
 
-            bool matches(const char* responseLine, size_t size) {
-                return (this->size == size || (partial && this->size <= size)) &&
+            bool matches(const char* responseLine, size_t size, bool partial) {
+                return ((!partial && this->size == size) || (this->partial && this->size <= size)) &&
                        !memcmp(this->text, responseLine, this->size);
             }
     };
@@ -81,7 +79,7 @@ enum class Esp8266::Response: Responses {
     send_ok           = 1 << 5,
     connection_closed = 1 << 6,
 };
-static ResponseMapping RESPONSES[] = {
+static ResponseMapping RESPONSE_MAPPING[] = {
     {Response::ok,    "OK"},
     {Response::error, "ERROR"},
 
@@ -167,7 +165,7 @@ void Esp8266::onStartRequestSending() {
 
 void Esp8266::onSendRequest() {
     if(status_ == Status::pending)
-        // FIXME: deprecate sendCustomCommand
+        // FIXME: deprecate sendCustomCommand(raw=true)
         return this->sendCustomCommand("abcdefgh", COMMAND_TIMEOUT, true, Response::error | Response::send_ok);
 
     if(this->hasResponse(Response::send_ok)) {
@@ -216,48 +214,26 @@ void Esp8266::onCloseConnection() {
     }
 }
 
-// FIXME: check all below
 void Esp8266::onProcessCommand() {
-    // FIXME: drop after buffer size adjustment
-    static size_t maxResponseSize = 0;
-
     while(true) {
         int data = serial_->read();
         if(data == -1)
             break;
 
-        if(data == '\n')
+        if(data == '\r')
             continue;
 
-        if(data == '\r') {
-            this->parseResponse();
-            maxResponseSize = max(maxResponseSize, responseSize_);
-
-            buf_[min(responseSize_, sizeof buf_ - 1)] = '\0';
-            vvlog(F("ESP8266: "), buf_);
-
-            if(responses_ & commandProcessedResponses_) {
-                if(responses_ & commandProcessedResponses_ & Response::error)
-                    vlog(F("ESP8266 command failed. Execution time: "), millis() - commandStartTime_, F("."));
-                else
-                    vlog(F("ESP8266 command succeeded. Execution time: "), millis() - commandStartTime_, F("."));
-
-                status_ = Status::processed;
-                log("Max response size: ", maxResponseSize);
+        if(data == '\n') {
+            if(this->onResponse())
                 return;
-            }
-
-            responseSize_ = 0;
-            continue;
+            else
+                continue;
         }
 
-        if(responseSize_ >= sizeof buf_) {
-            buf_[min(responseSize_, sizeof buf_ - 1)] = '\0';
-            vlog(F("Got truncated ESP8266 response: "), buf_);
-            responseSize_ = 0;
-        }
+        if(responseSize_ < sizeof buf_)
+            buf_[responseSize_] = data;
 
-        buf_[responseSize_++] = data;
+        ++responseSize_;
     }
 
     if(millis() - commandStartTime_ >= commandTimeout_) {
@@ -267,7 +243,38 @@ void Esp8266::onProcessCommand() {
         return;
     }
 
-    // FIXME: delay
+    this->scheduleAfter(this->COMMAND_EXECUTION_CHECK_PERIOD);
+}
+
+bool Esp8266::onResponse() {
+    // FIXME: drop after buffer size adjustment
+    static size_t maxResponseSize = 0;
+    maxResponseSize = max(maxResponseSize, responseSize_);
+
+    this->parseResponse();
+
+    if(responseSize_ >= sizeof buf_) {
+        buf_[sizeof buf_ - 1] = '\0';
+        vvlog(F("ESP8266 (truncated): "), buf_);
+    } else {
+        buf_[responseSize_] = '\0';
+        vvlog(F("ESP8266: "), buf_);
+    }
+
+    if(Responses commandProcessed = responses_ & commandProcessedResponses_) {
+        #if UTIL_ENABLE_LOGGING && UTIL_LOG_VERBOSITY >= 1
+            auto resultString = commandProcessed & Response::error ? F("failed") : F("succeeded");
+            auto executionTime = millis() - commandStartTime_;
+            vlog(F("ESP8266 command "), resultString, F(". Execution time: "), executionTime, F("."));
+        #endif
+
+        log("Max response size: ", maxResponseSize);
+        status_ = Status::processed;
+        return true;
+    }
+
+    responseSize_ = 0;
+    return false;
 }
 
 void Esp8266::sendCommand(const char* command, TimeMillis timeout) {
@@ -275,22 +282,22 @@ void Esp8266::sendCommand(const char* command, TimeMillis timeout) {
 }
 
 void Esp8266::sendCustomCommand(const char* command, TimeMillis timeout, bool raw, Responses commandProcessedResponses) {
+    // FIXME: drop after buffer size adjustment
+    static size_t maxCommandSize = 0;
+    maxCommandSize = max(maxCommandSize, strlen(command));
+    log("Max command size: ", maxCommandSize);
+
     vlog(F("Sending ESP8266 command: "), command);
 
-    // FIXME
-    delay(1000);
+    // Flush all garbage from failed commands and boot messages.
     while(serial_->read() != -1)
         ;
 
-    static size_t maxCommandSize = 0;
-
-    // FIXME: Check buffer size
+    // FIXME: use async writes here
     serial_->write(command);
+    // FIXME: deprecate raw mode
     if(!raw)
         serial_->write("\r\n");
-
-    maxCommandSize = max(maxCommandSize, strlen(command));
-    log("Max command size: ", maxCommandSize);
 
     this->waitForCommandCompletion(timeout, commandProcessedResponses);
 }
@@ -303,16 +310,18 @@ void Esp8266::waitForCommandCompletion(TimeMillis timeout, Responses commandProc
     responses_ = 0;
 
     status_ = Status::in_process;
-    // FIXME: delay
+    this->scheduleAfter(this->COMMAND_EXECUTION_CHECK_PERIOD);
 }
 
 void Esp8266::parseResponse() {
     if(!responseSize_)
         return;
 
-    for(ResponseMapping& mapping : RESPONSES) {
-        // FIXME
-        if(mapping.matches(buf_, responseSize_)) {
+    bool partial = responseSize_ > sizeof buf_;
+    size_t dataSize = partial ? sizeof buf_ : responseSize_;
+
+    for(ResponseMapping& mapping : RESPONSE_MAPPING) {
+        if(mapping.matches(buf_, dataSize, partial)) {
             responses_ |= mapping.response;
             return;
         }
