@@ -1,5 +1,6 @@
-/.clang_complete
-/.gcc-flags.json
-/.pioenvs
-/.travis.yml
-/lib/readme.txt
+/sensor/.clang_complete
+/sensor/.gcc-flags.json
+/sensor/.gitignore
+/sensor/.pioenvs
+/sensor/.travis.yml
+/sensor/lib/readme.txt
