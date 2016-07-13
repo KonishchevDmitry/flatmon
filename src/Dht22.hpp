@@ -28,6 +28,7 @@ class Dht22: public Util::Task {
         void onReading();
         void onError();
 
+        bool receiveData(uint16_t* data, uint8_t size);
         bool waitForLogicLevel(bool level, TimeMicros timeout);
 
         // FIXME

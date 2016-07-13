@@ -100,40 +100,35 @@ void Dht22::onReading() {
     pinMode(dataPin_, INPUT);
 
     if(digitalRead(dataPin_) != LOW) {
-        log(F("Failed to receive start reading response signal from DHT22."));
-        this->onError();
+        log(F("Failed to receive response from DHT22 on our 'start reading' signal."));
+        return this->onError();
     }
 
+    // FIXME: increase timeouts by overhead value?
 
-    // this->waitForLogicLevel(LOW, 0)
+    // FIXME: drop
+    TimeMicros lowVoltageStartTime = micros();
+
+    if(!this->waitForLogicLevel(HIGH, 80)) {
+        log(F("Failed to receive 'prepare to receive data' signal from DHT22"));
+        return this->onError();
+    }
+
+    // FIXME: drop
+    TimeMicros highVoltageStartTime = micros();
+
+    if(!this->waitForLogicLevel(LOW, 80)) {
+        log(F("Failed to receive 'start data transmission' signal from DHT22"));
+        return this->onError();
+    }
+
+    // FIXME: drop
+    TimeMicros transmissionStartTime = micros();
+    log(F("Low level duration: "), highVoltageStartTime - lowVoltageStartTime);
+    log(F("High level duration: "), transmissionStartTime - highVoltageStartTime);
 
     /*
     while(true) {
-        TimeMicros lowVoltageStartTime = micros();
-
-        // Wait for high voltage
-        while(!digitalRead(dataPin_))
-            ;
-        TimeMicros highVoltageStartTime = micros();
-
-        //log("Got high voltage!");
-
-        // Wait transmission start
-        while(digitalRead(dataPin_))
-            ;
-
-        TimeMicros transmissionStartTime = micros();
-
-        TimeMicros lowVoltageDuration = highVoltageStartTime - lowVoltageStartTime;
-        TimeMicros highVoltageDuration = transmissionStartTime - highVoltageStartTime;
-
-        // interrupts();
-
-        if(lowVoltageDuration < 50 || lowVoltageDuration > 90)
-            log("Got an invalid low voltage duration: ", lowVoltageDuration);
-        if(highVoltageDuration < 60 || highVoltageDuration > 90)
-            log("Got an invalid high voltage duration: ", highVoltageDuration);
-
         // FIXME: negative temperature support
         // uint16_t garbage = receiveData(dataPin_, 1);
         uint16_t first = receiveData(dataPin_, 16);
@@ -164,8 +159,67 @@ void Dht22::onReading() {
 }
 
 // FIXME
-void onError() {
+void Dht22::onError() {
     UTIL_ASSERT(false);
+}
+
+// FIXME: A shitty-written mockup of DHT22 sensor reading
+bool Dht22::receiveData(uint16_t* data, uint8_t size) {
+    *data = 0;
+
+    // FIXME: drop
+    int bitId = 0;
+    TimeMicros transmitDurations[size];
+    TimeMicros durations[size];
+
+    while(size) {
+        // FIXME: increase timeouts by overhead value?
+
+        // FIXME: drop
+        TimeMicros transmissionSignalStartTime = micros();
+
+        if(!this->waitForLogicLevel(HIGH, 50)) {
+            log(F("Failed to receive 'bit data' signal from DHT22."));
+            this->onError();
+            return false;
+        }
+
+        TimeMicros bitStartTime = micros();
+
+        if(!this->waitForLogicLevel(LOW, 70)) {
+            log(F("Failed to receive 'end of bit data' signal from DHT22."));
+            this->onError();
+            return false;
+        }
+
+        TimeMicros bitDuration = micros() - bitStartTime;
+
+        // FIXME: drop
+        durations[bitId] = bitDuration;
+        transmitDurations[bitId] = bitStartTime - transmissionSignalStartTime;
+
+        *data <<= 1;
+        if(bitDuration > 40) // FIXME: alter value
+            *data |= 1;
+
+        ++bitId;
+    }
+
+    // FIXME: drop
+    {
+        char buf[100];
+        size_t curPos = 0;
+        for(int bitId = 0; bitId < size; bitId++) {
+            size_t freeSpace = sizeof buf - curPos;
+            size_t length = snprintf(buf + curPos, freeSpace, " %ld", durations[bitId]);
+            UTIL_ASSERT(length < freeSpace);
+            curPos += length;
+        }
+        // FIXME: check also transmitDurations
+        log("Bit durations:", buf);
+    }
+
+    return true;
 }
 
 bool Dht22::waitForLogicLevel(bool level, TimeMicros timeout) {
@@ -177,52 +231,6 @@ bool Dht22::waitForLogicLevel(bool level, TimeMicros timeout) {
     } while(micros() < timeoutTime);
 
     return false;
-}
-
-// FIXME: A shitty-written mockup of DHT22 sensor reading
-uint16_t receiveData(uint8_t dataPin_, uint8_t size) {
-    uint16_t data = 0;
-    TimeMicros transmitDurations[size];
-    TimeMicros durations[size];
-
-    for(int bitId = 0; bitId < size; bitId++) {
-        // noInterrupts();
-
-        TimeMicros transmissionSignalStartTime = micros();
-
-        // Wait for bit data
-        while(!digitalRead(dataPin_))
-            ;
-
-        TimeMicros bitStartTime = micros();
-        //log("Got start of a bit.");
-
-        while(digitalRead(dataPin_))
-            ;
-
-        TimeMicros bitDuration = micros() - bitStartTime;
-        TimeMicros transmissionSignalDuration = bitStartTime - transmissionSignalStartTime;
-
-        // interrupts();
-
-        /*
-        if(transmissionSignalDuration < 40 || transmissionSignalDuration > 60)
-            log("Got an invalid transmission signal duration: ", transmissionSignalDuration);
-
-        if(bitDuration < 20 || bitDuration > 30 && bitDuration < 70 || bitDuration > 80)
-            log("Got an invalid bit duration: ", bitDuration);
-        */
-
-        durations[bitId] = bitDuration;
-        if(bitDuration > 40)
-            data |= (uint16_t(1) << (size - bitId - 1));
-        // log("Bit value: ", bitDuration);
-    }
-
-    // for(int bitId = 0; bitId < size; bitId++)
-        // log("Duration: ", transmitDurations[bitId], " ", durations[bitId]);
-
-    return data;
 }
 
 // FIXME
