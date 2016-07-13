@@ -1,6 +1,11 @@
+/lib/readme.txt
+/receiver/.clang_complete
+/receiver/.gcc-flags.json
+/receiver/.gitignore
+/receiver/.pioenvs
+/receiver/.travis.yml
 /sensor/.clang_complete
 /sensor/.gcc-flags.json
 /sensor/.gitignore
 /sensor/.pioenvs
 /sensor/.travis.yml
-/sensor/lib/readme.txt

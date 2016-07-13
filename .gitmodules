@@ -1,3 +1,3 @@
-[submodule "sensor/lib/AltSoftSerial"]
-	path = sensor/lib/AltSoftSerial
+[submodule "lib/AltSoftSerial"]
+	path = lib/AltSoftSerial
 	url = git@github.com:PaulStoffregen/AltSoftSerial.git
