@@ -4,8 +4,8 @@
 #include "Core.hpp"
 
 #if UTIL_VERBOSE_ASSERTS
-    #define UTIL_ASSERT(expression, ...) do {       \
-        if(!(expression))                      \
+    #define UTIL_ASSERT(expression, ...) do {                    \
+        if(!(expression))                                        \
             ::Util::abort(F(__FILE__), __LINE__, ##__VA_ARGS__); \
     } while(false)
 #else
