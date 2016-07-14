@@ -9,7 +9,6 @@
 
 #include "Buzzer.hpp"
 #include "CO2Sensor.hpp"
-#include "Esp8266.hpp"
 #include "Indication.hpp"
 #include "TemperatureSensor.hpp"
 
@@ -22,18 +21,6 @@ using Util::Logging::log;
 // Arduino Leonardo, Micro   5  13        (none)
 // Arduino Mega             46  48        44, 45
 AltSoftSerial SOFTWARE_SERIAL;
-
-// ESP8266 connection notes:
-//
-// VCC - 3.3V, but we shouldn't connect it to Arduino's 3.3V pin because ESP8266 can consume up to 200mA and Arduino Uno
-//       is not able to provide such current from 3.3V. So we should use AMS1117 5V -> 3.3V step down power supply module.
-// RST, EN (CH_PD), GPIO0, GPIO2, TXD0 - 3.3V through 10K resistor
-// GPIO15 - GND through 10K resistor
-// TXD0/RXD0 - should be connected to Arduino pins through 5V -> 3.3V logic level shifter
-//
-// In order to prevent resets the following capacitors should be included to the scheme:
-// * A large capacitor (470uF) across the VCC to GND rails.
-// * A 0.1uF decoupling capacitor across the ESP8266 VCC to GND inputs very close to the pins (within 1.5 cm).
 
 // MH-Z19 connection notes:
 // Vin - 5V
@@ -62,25 +49,20 @@ void setup() {
     // FIXME: check F() macro issues: deduplication, release mode.
     log(F("Initializing..."));
 
-    // FIXME: ESP8266 errors indication
     Util::TaskScheduler scheduler;
 
-    #if 1
-        Esp8266 esp8266(&SOFTWARE_SERIAL, &scheduler);
-    #else
-        Buzzer buzzer(&scheduler, BUZZER_PIN);
-        ShiftRegisterLeds leds(SHIFT_REGISTER_DATA_PIN, SHIFT_REGISTER_CLOCK_PIN, SHIFT_REGISTER_LATCH_PIN);
+    Buzzer buzzer(&scheduler, BUZZER_PIN);
+    ShiftRegisterLeds leds(SHIFT_REGISTER_DATA_PIN, SHIFT_REGISTER_CLOCK_PIN, SHIFT_REGISTER_LATCH_PIN);
 
-        const size_t ledsNum = sizeof LED_BRIGHTNESS_CONTROLLING_PINS / sizeof *LED_BRIGHTNESS_CONTROLLING_PINS;
-        LedBrightnessRegulator<ledsNum> ledBrightnessRegulator(
-            LIGHT_SENSOR_PIN, LED_BRIGHTNESS_CONTROLLING_PINS, &scheduler);
+    const size_t ledsNum = sizeof LED_BRIGHTNESS_CONTROLLING_PINS / sizeof *LED_BRIGHTNESS_CONTROLLING_PINS;
+    LedBrightnessRegulator<ledsNum> ledBrightnessRegulator(
+        LIGHT_SENSOR_PIN, LED_BRIGHTNESS_CONTROLLING_PINS, &scheduler);
 
-        LedGroup co2Leds(&leds, 0, 4);
-        CO2Sensor co2Sensor(&SOFTWARE_SERIAL, &scheduler, &co2Leds, &buzzer);
+    LedGroup co2Leds(&leds, 0, 4);
+    CO2Sensor co2Sensor(&SOFTWARE_SERIAL, &scheduler, &co2Leds, &buzzer);
 
-        LedGroup temperatureLeds(&leds, 4, 4);
-        TemperatureSensor temperatureSensor(TEMPERATURE_SENSOR_PIN, &scheduler, &temperatureLeds, &buzzer);
-    #endif
+    LedGroup temperatureLeds(&leds, 4, 4);
+    TemperatureSensor temperatureSensor(TEMPERATURE_SENSOR_PIN, &scheduler, &temperatureLeds, &buzzer);
 
     size_t freeMemorySize = getStackFreeMemorySize();
     UTIL_ASSERT(freeMemorySize > 100, F("Failed to start: Not enough memory."));
