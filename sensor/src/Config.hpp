@@ -1,0 +1,7 @@
+#ifndef Config_hpp
+#define Config_hpp
+
+#define CONFIG_ENABLE_TRANSMITTER 1
+#define CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL !CONFIG_ENABLE_TRANSMITTER
+
+#endif

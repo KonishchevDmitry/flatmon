@@ -66,7 +66,13 @@ void CO2Sensor::execute() {
 }
 
 void CO2Sensor::onReadConcentration() {
-    sensorSerial_->flushInput();
+    #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
+        sensorSerial_->flushInput();
+    #else
+        while(sensorSerial_->read() != -1)
+            ;
+    #endif
+
     receivedBytes_ = 0;
 
     static byte getGasConcentrationCommand[] = {0xFF,0x01,0x86,0x00,0x00,0x00,0x00,0x00,0x79};

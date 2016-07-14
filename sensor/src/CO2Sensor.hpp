@@ -1,13 +1,16 @@
 #ifndef CO2Sensor_hpp
 #define CO2Sensor_hpp
 
-#include <AltSoftSerial.h>
-
 #include <Util/Core.hpp>
 #include <Util/TaskScheduler.hpp>
 
 #include "Buzzer.hpp"
+#include "Config.hpp"
 #include "Indication.hpp"
+
+#if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
+    #include <AltSoftSerial.h>
+#endif
 
 // Represents MH-Z19 CO2 sensor.
 //
@@ -16,7 +19,12 @@
 class CO2Sensor: public Util::Task {
     public:
         enum class Comfort: uint8_t;
+
+    #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
         typedef AltSoftSerial SensorSerial;
+    #else
+        typedef HardwareSerial SensorSerial;
+    #endif
 
     private:
         enum class State: uint8_t;
