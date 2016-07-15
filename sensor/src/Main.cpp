@@ -13,6 +13,18 @@
 
 using Util::Logging::log;
 
+#if CONFIG_ENABLE_TRANSMITTER
+    const int TRANSMITTER_SPEED = 2000;
+    const int TRANSMITTER_TX_PIN = 9;
+    const int TRANSMITTER_RX_PIN = A4;
+    const int TRANSMITTER_PTT_PIN = A5;
+
+    // FIXME: Add unusable PWM notes (because of Timer1 usage)
+    #include <RH_ASK.h>
+    #include "Transmitter.hpp"
+    RH_ASK TRANSMITTER(TRANSMITTER_SPEED, TRANSMITTER_RX_PIN, TRANSMITTER_TX_PIN, TRANSMITTER_PTT_PIN);
+#endif
+
 #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
     // AltSoftSerial always uses these pins and breaks PWM on the following pins:
     //
@@ -46,11 +58,6 @@ const uint8_t LED_BRIGHTNESS_CONTROLLING_PINS[] = {6};
 // Attention: Use of tone() function interferes with PWM output on pins 3 and 11 (on boards other than the Mega).
 const int BUZZER_PIN = 11;
 
-// FIXME
-#include <RH_ASK.h>
-#include <SPI.h> // Not actually used but needed to compile
-RH_ASK driver(2000, 8, 9);
-
 void setup() {
     Util::Logging::init();
     // FIXME: check F() macro issues: deduplication, release mode.
@@ -72,6 +79,10 @@ void setup() {
 
     LedGroup temperatureLeds(&leds, 4, 4);
     TemperatureSensor temperatureSensor(TEMPERATURE_SENSOR_PIN, &scheduler, &temperatureLeds, &buzzer);
+
+    #if CONFIG_ENABLE_TRANSMITTER
+        Transmitter transmitter(&TRANSMITTER, &scheduler);
+    #endif
 
     size_t freeMemorySize = getStackFreeMemorySize();
     UTIL_ASSERT(freeMemorySize > 100, F("Failed to start: Not enough memory."));

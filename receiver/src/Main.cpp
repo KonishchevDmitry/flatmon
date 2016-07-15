@@ -4,54 +4,44 @@
 #include <Util/Assertion.hpp>
 #include <Util/Logging.hpp>
 
-using Util::Logging::log;
+#include <Common/SensorMessage.hpp>
 
-#if 0
-RH_ASK driver(2000, 8, A4, A5);
+using Util::Logging::log;
+using Common::SensorMessage;
+
+// FIXME: Add unusable PWM notes (because of Timer1 usage)
+const int TRANSMITTER_SPEED = 2000;
+const int TRANSMITTER_RX_PIN = 8;
+const int TRANSMITTER_TX_PIN = A4;
+const int TRANSMITTER_PTT_PIN = A5;
+RH_ASK RECEIVER(TRANSMITTER_SPEED, TRANSMITTER_RX_PIN, TRANSMITTER_TX_PIN, TRANSMITTER_PTT_PIN);
 
 void setup() {
     Util::Logging::init();
+    Serial.begin(9600);
+
     log(F("Initializing..."));
+    if(!RECEIVER.init())
+        UTIL_LOGICAL_ERROR(F("Failed to initialize the receiver."));
 
-    {
-        bool initialized = driver.init();
-        UTIL_ASSERT(initialized);
-    }
+    uint8_t buf[sizeof(SensorMessage) + 1];
+    uint8_t messageSize;
 
-    while (true) {
-        uint8_t buf[RH_ASK_MAX_MESSAGE_LEN];
-        uint8_t buflen = sizeof(buf);
-        if (driver.recv(buf, &buflen)) {
-          buf[buflen] = 0;
-          log(millis() / 1000, " > Message: ", (char*) buf);
+    while(true) {
+        messageSize = sizeof buf;
+        if(!RECEIVER.recv(buf, &messageSize))
+            continue;
+
+        if(messageSize != sizeof(SensorMessage)) {
+            log(F("Got a message with invalid size."));
+            continue;
         }
+
+        SensorMessage* message = reinterpret_cast<SensorMessage*>(buf);
+        log(millis() / 1000, F(": Got a message from "), message->sensorId, F(" sensor: "), message->data, F("."));
     }
 }
 
 void loop() {
     UTIL_LOGICAL_ERROR();
 }
-#else
-#include <RH_ASK.h>
-#include <SPI.h> // Not actually used but needed to compile
-
-RH_ASK driver(2000, 8, 9);
-
-void setup()
-{
-    Serial.begin(9600);   // Debugging only
-    if (!driver.init())
-         Serial.println("init failed");
-}
-
-void loop()
-{
-    const char *msg = "Hello";
-    TimeMicros startTime = micros();
-    driver.send((uint8_t *)msg, strlen(msg));
-    // driver.waitPacketSent();
-    TimeMicros endtime = micros();
-    log("Send time: ", endtime - startTime);
-    delay(1000);
-}
-#endif
