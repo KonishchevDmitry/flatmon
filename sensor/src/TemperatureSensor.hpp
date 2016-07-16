@@ -8,6 +8,7 @@
 #include "Buzzer.hpp"
 #include "Indication.hpp"
 
+// FIXME: Deprecate by DHT22 (don't drop until we'll be sure that we don't need cycle buffer in DHT22)
 class TemperatureSensor: public Util::Task {
     public:
         enum class Comfort: uint8_t;

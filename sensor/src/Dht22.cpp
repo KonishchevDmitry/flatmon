@@ -1,5 +1,3 @@
-// FIXME: A shitty-written work in progress mockup of communication with DHT22
-
 #include <Util/Constants.hpp>
 #include <Util/Core.hpp>
 #include <Util/Logging.hpp>
@@ -27,28 +25,25 @@ namespace {
     constexpr auto POLLING_PERIOD = 10 * Constants::SECOND_MILLIS;
     constexpr auto COLLECTION_PERIOD = 2 * Constants::SECOND_MILLIS;
 
-    // FIXME
-    float getTemperature(uint16_t pwmValue) {
-        float volts = float(pwmValue) / Constants::ANALOG_HIGH * Constants::VOLTS;
-        return (volts - 0.5) * 100;
+    // FIXME: Alter the values
+    HumidityComfort getHumidityComfort(uint8_t humidity) {
+        if(humidity <= 30)
+            return HumidityComfort::very_low;
+        else if(humidity <= 40)
+            return HumidityComfort::low;
+        else if(humidity <= 60)
+            return HumidityComfort::normal;
+        else
+            return HumidityComfort::high;
     }
 
-    // FIXME: choose the right numbers
-    // low > 30
-    // very low < 30
-    // 45% (40-60) - norm
-    // high > 60
-    //
-
-    // FIXME
-    TemperatureComfort getTemperatureComfort(float temperature) {
-        long roundedTemperature = lround(temperature);
-
-        if(roundedTemperature <= 18)
+    // FIXME: Alter the values
+    TemperatureComfort getTemperatureComfort(int8_t temperature) {
+        if(temperature <= 18)
             return TemperatureComfort::cold;
-        else if(roundedTemperature <= 24)
+        else if(temperature <= 24)
             return TemperatureComfort::normal;
-        else if(roundedTemperature <= 26)
+        else if(temperature <= 26)
             return TemperatureComfort::warm;
         else
             return TemperatureComfort::hot;
@@ -61,8 +56,7 @@ Dht22::Dht22(uint8_t dataPin, Util::TaskScheduler* scheduler,
   humidityLedGroup_(humidityLedGroup), humidityLedProgress_(humidityLedGroup),
   temperatureComfort_(TemperatureComfort::unknown), temperatureLedGroup_(temperatureLedGroup),
   temperatureLedProgress_(temperatureLedGroup), buzzer_(buzzer) {
-    pinMode(dataPin_, OUTPUT);
-    digitalWrite(dataPin_, HIGH);
+    this->stopReading();
 
     scheduler->addTask(&humidityLedProgress_);
     scheduler->addTask(&temperatureLedProgress_);
@@ -151,33 +145,60 @@ void Dht22::onReading() {
         return this->onError();
     }
 
-    int8_t humidity = lround(float(payload[0]) / 10);
-    int8_t temperature = lround(float(payload[1]) / 10);
-    log(F("Humidity: "), int(humidity), F("%."));
+    uint8_t humidity = lround(float(payload[0]) / 10);
+    log(F("Humidity: "), humidity, F("%."));
+    this->onHumidityComfort(getHumidityComfort(humidity));
+
+    int16_t encodedTemperature = payload[1];
+    uint16_t negativeTemperatureBit = 1 << 15;
+    if(encodedTemperature & negativeTemperatureBit) {
+        encodedTemperature ^= negativeTemperatureBit;
+        encodedTemperature = -encodedTemperature;
+    }
+
+    int8_t temperature = lround(float(encodedTemperature) / 10);
     log(F("Temperature: "), int(temperature), F("C."));
+    this->onTemperatureComfort(getTemperatureComfort(temperature));
 
-    // FIXME: on error
-    pinMode(dataPin_, OUTPUT);
-    digitalWrite(dataPin_, HIGH);
-
+    this->stopReading();
     this->state_ = State::start_reading;
     this->scheduleAfter(POLLING_PERIOD);
-
-    // FIXME
-    /*
-    values_.add(value);
-
-    if(values_.full()) {
-        float temperature = getTemperature(value);
-        float smoothedTemperature = getTemperature(values_.median());
-        this->onTemperature(temperature, smoothedTemperature);
-    }
-    */
 }
 
-// FIXME
 void Dht22::onError() {
-    UTIL_ASSERT(false);
+    this->stopReading();
+    this->state_ = State::start_reading;
+    this->scheduleAfter(POLLING_PERIOD);
+}
+
+void Dht22::onHumidityComfort(HumidityComfort comfort) {
+    if(comfort == humidityComfort_)
+        return;
+
+    if(comfort == HumidityComfort::unknown)
+        humidityLedProgress_.resume();
+    else if(humidityComfort_ == HumidityComfort::unknown)
+        humidityLedProgress_.pause();
+    else
+        buzzer_->notify();
+
+    humidityComfort_ = comfort;
+    humidityLedGroup_->setLed(int(comfort));
+}
+
+void Dht22::onTemperatureComfort(TemperatureComfort comfort) {
+    if(comfort == temperatureComfort_)
+        return;
+
+    if(comfort == TemperatureComfort::unknown)
+        temperatureLedProgress_.resume();
+    else if(temperatureComfort_ == TemperatureComfort::unknown)
+        temperatureLedProgress_.pause();
+    else
+        buzzer_->notify();
+
+    temperatureComfort_ = comfort;
+    temperatureLedGroup_->setLed(int(comfort));
 }
 
 bool Dht22::receiveData(uint16_t* data, uint8_t size) {
@@ -249,37 +270,18 @@ bool Dht22::receiveData(uint16_t* data, uint8_t size) {
 }
 
 bool Dht22::waitForLogicLevel(bool level, TimeMicros timeout) {
-    const TimeMicros precision = 10; // FIXME
-    TimeMicros timeoutTime = micros() + timeout + precision;
+    TimeMicros startTime = micros();
+    timeout += 10; // DHT22 + measuring precision
 
     do {
         if(digitalRead(dataPin_) == level)
             return true;
-    } while(micros() < timeoutTime);
+    } while(micros() - startTime < timeout);
 
     return false;
 }
 
-// FIXME
-void Dht22::onTemperature(float temperature, float smoothedTemperature) {
-    TemperatureComfort comfort = getTemperatureComfort(smoothedTemperature);
-
-    if(comfort != temperatureComfort_)
-        this->onComfortChange(comfort, temperatureComfort_ == TemperatureComfort::unknown);
-
-    log(F("Temperature: "), temperature, F(" -> "), smoothedTemperature,
-        F(" ("), TEMPERATURE_COMFORT_NAMES[int(comfort)], F(")."));
-}
-
-// FIXME
-void Dht22::onComfortChange(TemperatureComfort comfort, bool initialChange) {
-    /*
-    temperatureComfort_ = comfort;
-    ledGroup_->setLed(int(comfort));
-
-    if(initialChange)
-        ledProgress_.remove();
-    else
-        buzzer_->notify();
-    */
+void Dht22::stopReading() {
+    pinMode(dataPin_, OUTPUT);
+    digitalWrite(dataPin_, HIGH);
 }

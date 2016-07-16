@@ -2,7 +2,6 @@
 #define Dht22_hpp
 
 #include <Util/Core.hpp>
-#include <Util/CycleBuffer.hpp>
 #include <Util/TaskScheduler.hpp>
 
 #include "Buzzer.hpp"
@@ -28,12 +27,12 @@ class Dht22: public Util::Task {
         void onReading();
         void onError();
 
+        void onHumidityComfort(HumidityComfort comfort);
+        void onTemperatureComfort(TemperatureComfort comfort);
+
         bool receiveData(uint16_t* data, uint8_t size);
         bool waitForLogicLevel(bool level, TimeMicros timeout);
-
-        // FIXME
-        void onTemperature(float temperature, float smoothedTemperature);
-        void onComfortChange(TemperatureComfort comfort, bool initialChange);
+        void stopReading();
 
     private:
         uint8_t dataPin_;
