@@ -86,7 +86,7 @@ void setup() {
     #endif
 
     #if CONFIG_ENABLE_TRANSMITTER
-        Transmitter transmitter(&TRANSMITTER, &scheduler);
+        Transmitter transmitter(&TRANSMITTER, &scheduler, &dht22);
     #endif
 
     size_t freeMemorySize = getStackFreeMemorySize();

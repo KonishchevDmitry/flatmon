@@ -65,6 +65,22 @@ Dht22::Dht22(uint8_t dataPin, Util::TaskScheduler* scheduler,
     this->scheduleAfter(COLLECTION_PERIOD);
 }
 
+bool Dht22::getHumidity(uint8_t *humidity) {
+    if(humidityComfort_ == HumidityComfort::unknown)
+        return false;
+
+    *humidity = humidity_;
+    return true;
+}
+
+bool Dht22::getTemperature(int8_t *temperature) {
+    if(temperatureComfort_ == TemperatureComfort::unknown)
+        return false;
+
+    *temperature = temperature_;
+    return true;
+}
+
 void Dht22::execute() {
     switch(state_) {
         case State::start_reading:
@@ -145,9 +161,10 @@ void Dht22::onReading() {
         return this->onError();
     }
 
-    uint8_t humidity = lround(float(payload[0]) / 10);
-    log(F("Humidity: "), humidity, F("%."));
-    this->onHumidityComfort(getHumidityComfort(humidity));
+    humidity_ = lround(float(payload[0]) / 10);
+    HumidityComfort humidityComfort = getHumidityComfort(humidity_);
+    log(F("Humidity: "), humidity_, F("% ("), HUMIDITY_COMFORT_NAMES[int(humidityComfort)], F(")."));
+    this->onHumidityComfort(humidityComfort);
 
     int16_t encodedTemperature = payload[1];
     uint16_t negativeTemperatureBit = 1 << 15;
@@ -156,9 +173,10 @@ void Dht22::onReading() {
         encodedTemperature = -encodedTemperature;
     }
 
-    int8_t temperature = lround(float(encodedTemperature) / 10);
-    log(F("Temperature: "), int(temperature), F("C."));
-    this->onTemperatureComfort(getTemperatureComfort(temperature));
+    temperature_ = lround(float(encodedTemperature) / 10);
+    TemperatureComfort temperatureComfort = getTemperatureComfort(temperature_);
+    log(F("Temperature: "), temperature_, F("C ("), TEMPERATURE_COMFORT_NAMES[int(temperatureComfort)], F(")."));
+    this->onTemperatureComfort(temperatureComfort);
 
     this->stopReading();
     this->state_ = State::start_reading;
@@ -167,6 +185,10 @@ void Dht22::onReading() {
 
 void Dht22::onError() {
     this->stopReading();
+
+    this->onHumidityComfort(HumidityComfort::unknown);
+    this->onTemperatureComfort(TemperatureComfort::unknown);
+
     this->state_ = State::start_reading;
     this->scheduleAfter(POLLING_PERIOD);
 }

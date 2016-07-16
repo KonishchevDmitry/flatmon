@@ -36,33 +36,36 @@ class Thingspeak:
         # FIXME: support few sensors
         self.__last_update_time = 0
 
-    def on_sensor_metrics(self, sensor_id, metrics):
+    def on_sensor_metrics(self, sensor_id, humidity, temperature):
         try:
             sensor_info = self.__sensors[sensor_id]
         except KeyError:
             log.error("Got metrics from an unknown sensor #%s.", sensor_id)
             return
 
+        sensor_name = sensor_info["name"]
+        log.info("Got metrics from %s sensor.", sensor_name)
+
         if time.time() - self.__last_update_time < self.RATE_LIMIT_SECONDS:
             return
 
-        sensor_name = sensor_info["name"]
         log.info("Sending metrics to %s channel...", sensor_name)
 
         # FIXME: Send metrics asynchronously
         try:
-            self.__send_metrics(sensor_info["channel_id"], metrics)
+            self.__send_metrics(sensor_info["channel_id"], humidity, temperature)
         except Exception as e:
             log.error("Unable to send metrics to %s channel: %s", sensor_name, e)
         finally:
             self.__last_update_time = time.time()
 
-    def __send_metrics(self, channel_id, metrics):
+    def __send_metrics(self, channel_id, humidity, temperature):
         response = requests.post("https://api.thingspeak.com/update.json", headers={
             "THINGSPEAKAPIKEY": self.__write_api_key,
         }, json={
             "channel_id": channel_id,
-            "field1": metrics,
+            "field1": humidity,
+            "field2": temperature,
         }, timeout=5)
 
         if response.status_code != requests.codes.ok:
@@ -115,6 +118,7 @@ def load_config(path):
     return config
 
 
+# FIXME: to class
 def monitor(device_path, thingspeak):
     # FIXME: Handle device unavailability and temporary disconnection
 
@@ -123,21 +127,31 @@ def monitor(device_path, thingspeak):
     log.info("Connected to %s.", device_path)
 
     while True:
-        line = receiver.readline(1024)
+        line = receiver.readline(1024).rstrip(b"\r\n")
 
-        try:
-            line = line.decode("utf-8")
-        except ValueError:
-            log.error("Got an invalid UTF-8 line from port.")
-            continue
+        if line.startswith(b"> "):
+            on_sensor_message(thingspeak, line[2:])
+        else:
+            try:
+                line = line.decode("utf-8")
+            except ValueError:
+                log.error("Got an invalid UTF-8 string from port.")
+            else:
+                log.info("> %s", line)
 
-        line = line.rstrip("\r\n")
-        log.info("> %s", line)
 
-        # FIXME: a mockup
-        sensor_id = 1
-        metrics = len(line)
-        thingspeak.on_sensor_metrics(sensor_id, metrics)
+def on_sensor_message(thingspeak, message):
+    try:
+        if len(message) != 6:
+            raise ValueError
+
+        sensor_id, humidity, temperature = (int(message[char:char+2], 16) for char in range(0, len(message), 2))
+    except ValueError:
+        log.error("Got an invalid sensor message from receiver: %r.", message)
+        return
+
+    # FIXME: support unknown values
+    thingspeak.on_sensor_metrics(sensor_id, humidity, temperature)
 
 
 # FIXME: Termination signal handling

@@ -20,6 +20,9 @@ class Dht22: public Util::Task {
               LedGroup* humidityLedGroup, LedGroup* temperatureLedGroup, Buzzer* buzzer);
 
     public:
+        bool getHumidity(uint8_t* humidity);
+        bool getTemperature(int8_t* temperature);
+
         virtual void execute();
 
     private:
@@ -38,10 +41,12 @@ class Dht22: public Util::Task {
         uint8_t dataPin_;
         State state_;
 
+        uint8_t humidity_;
         HumidityComfort humidityComfort_;
         LedGroup* humidityLedGroup_;
         LedProgressTask humidityLedProgress_;
 
+        int8_t temperature_;
         TemperatureComfort temperatureComfort_;
         LedGroup* temperatureLedGroup_;
         LedProgressTask temperatureLedProgress_;
