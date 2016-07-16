@@ -2,15 +2,17 @@
 #
 # Indoor air quality monitoring daemon.
 #
-# requirements.txt: object_validator pcli pyserial pyyaml requests
+# requirements.txt: object_validator pcli psys pyserial pyyaml requests
 
 import logging
 import os.path
 import sys
+import threading
 import time
 
 import object_validator
 import pcli.log
+import psys.process
 import requests
 import serial
 import yaml
@@ -26,47 +28,95 @@ class Error(Exception):
         super(Error, self).__init__(message.format(*args) if args else message)
 
 
-class Thingspeak:
+class Sensor:
     RATE_LIMIT_SECONDS = 15
 
+    def __init__(self, name, thingspeak, channel_id):
+        self.name = name
+        self.__thingspeak = thingspeak
+        self.__channel_id = channel_id
+        self.__channel_last_update_time = 0
+        self.__sending_thread = None
+
+    def on_metrics(self, humidity=None, temperature=None):
+        metrics = drop_none({
+            "field1": humidity,
+            "field2": temperature,
+        })
+
+        if not metrics:
+            return
+
+        if self.__sending_thread is not None and self.__sending_thread.is_alive():
+            return
+
+        if time.time() - self.__channel_last_update_time < self.RATE_LIMIT_SECONDS:
+            return
+
+        self.__sending_thread = threading.Thread(name="Sending thread for '{}'".format(self.name),
+                                                 target=self.__send_metrics, args=(metrics,))
+
+        try:
+            self.__sending_thread.start()
+        except Exception as e:
+            log.error("Failed to send metrics to '%s' channel: Unable to spawn a thread: %s.", self.name, e)
+
+    def wait_for_active_requests(self):
+        if self.__sending_thread is not None:
+            self.__sending_thread.join()
+
+    def __send_metrics(self, metrics):
+        log.info("Sending metrics to '%s' channel...", self.name)
+
+        first_update = self.__channel_last_update_time == 0
+        request = dict(metrics, channel_id=self.__channel_id)
+
+        try:
+            result = self.__thingspeak.send_request("update", request)
+
+            if result == 0:
+                (log.warning if first_update else log.error)(
+                    "API rate limit has been reached for '%s' (%s) channel.", self.name, self.__channel_id)
+            else:
+                try:
+                    object_validator.validate("result", result, DictScheme({
+                        "channel_id": Integer(choices=(self.__channel_id,)),
+                    }, ignore_unknown=True))
+                except object_validator.ValidationError:
+                    raise Error("Got an unexpected response from the server.")
+        except Exception as e:
+            log.error("Unable to send metrics to '%s' (%s) channel: %s", self.name, self.__channel_id, e)
+        finally:
+            self.__channel_last_update_time = time.time()
+
+
+class Thingspeak:
     def __init__(self, config):
         self.__write_api_key = config["write_api_key"]
-        self.__sensors = config["sensors"]
+        self.__sensors = {sensor_id: Sensor(sensor_info["name"], self, sensor_info["channel_id"])
+                          for sensor_id, sensor_info in config["sensors"].items()}
 
-        # FIXME: support few sensors
-        self.__last_update_time = 0
+    def __enter__(self):
+        return self
 
-    def on_sensor_metrics(self, sensor_id, humidity, temperature):
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        for sensor in self.__sensors.values():
+            sensor.wait_for_active_requests()
+
+    def on_sensor_metrics(self, sensor_id, humidity=None, temperature=None):
         try:
-            sensor_info = self.__sensors[sensor_id]
+            sensor = self.__sensors[sensor_id]
         except KeyError:
             log.error("Got metrics from an unknown sensor #%s.", sensor_id)
             return
 
-        sensor_name = sensor_info["name"]
-        log.info("Got metrics from %s sensor.", sensor_name)
+        log.info("Got metrics from '%s' sensor.", sensor.name)
+        sensor.on_metrics(humidity=humidity, temperature=temperature)
 
-        if time.time() - self.__last_update_time < self.RATE_LIMIT_SECONDS:
-            return
-
-        log.info("Sending metrics to %s channel...", sensor_name)
-
-        # FIXME: Send metrics asynchronously
-        try:
-            self.__send_metrics(sensor_info["channel_id"], humidity, temperature)
-        except Exception as e:
-            log.error("Unable to send metrics to %s channel: %s", sensor_name, e)
-        finally:
-            self.__last_update_time = time.time()
-
-    def __send_metrics(self, channel_id, humidity, temperature):
-        response = requests.post("https://api.thingspeak.com/update.json", headers={
+    def send_request(self, method, request):
+        response = requests.post("https://api.thingspeak.com/{}.json".format(method), headers={
             "THINGSPEAKAPIKEY": self.__write_api_key,
-        }, json={
-            "channel_id": channel_id,
-            "field1": humidity,
-            "field2": temperature,
-        }, timeout=5)
+        }, json=request, timeout=5)
 
         if response.status_code != requests.codes.ok:
             raise Error("The server returned an error: {} {}", response.status_code, response.reason)
@@ -76,18 +126,71 @@ class Thingspeak:
         except ValueError as e:
             raise Error("Got an invalid response from server: {}.", e)
 
-        if result == 0:
-            log.error("API rate limit has been reached for %s channel.", channel_id)
-            return False
+        return result
 
+
+class Monitor:
+    def __init__(self, device_path, thingspeak):
+        self.__device_path = device_path
+        self.__thingspeak = thingspeak
+
+    def start(self):
+        retry_period = 10
+
+        while True:
+            if not os.path.exists(self.__device_path):
+                log.info("Receiver (%s) is not connected. Will retry in %s seconds...",
+                         self.__device_path, retry_period)
+                time.sleep(retry_period)
+                continue
+
+            log.info("Connecting to receiver (%s)...", self.__device_path)
+
+            try:
+                with serial.Serial(self.__device_path, 9600) as receiver:
+                    log.info("Connected.")
+                    while True:
+                        self.__read_message(receiver)
+            except serial.SerialException as e:
+                log.error("Error in communication with receiver: %s.", e)
+                log.info("Will reconnect after %s seconds...", retry_period)
+                time.sleep(retry_period)
+                continue
+
+    def __read_message(self, receiver):
+        line = receiver.readline(1024).rstrip(b"\r\n")
+        sensor_message_prefix = b"> "
+
+        if line.startswith(sensor_message_prefix):
+            self.__on_sensor_message(line[len(sensor_message_prefix):])
+        else:
+            try:
+                line = line.decode("utf-8")
+            except ValueError:
+                log.error("Got an invalid UTF-8 string from port.")
+            else:
+                log.info("> %s", line)
+
+    def __on_sensor_message(self, message):
         try:
-            object_validator.validate("result", result, DictScheme({
-                "channel_id": Integer(choices=(channel_id,)),
-            }, ignore_unknown=True))
-        except object_validator.ValidationError:
-            raise Error("Got an unexpected response from the server.")
+            if len(message) != 6:
+                raise ValueError
 
-        return True
+            sensor_id, humidity, temperature = (int(message[char:char+2], 16) for char in range(0, len(message), 2))
+        except ValueError:
+            log.error("Got an invalid sensor message from receiver: %r.", message)
+            return
+
+        # FIXME
+        no_value = 127
+
+        if humidity == no_value:
+            humidity = None
+
+        if temperature == no_value:
+            temperature = None
+
+        self.__thingspeak.on_sensor_metrics(sensor_id, humidity, temperature)
 
 
 def load_config(path):
@@ -118,44 +221,14 @@ def load_config(path):
     return config
 
 
-# FIXME: to class
-def monitor(device_path, thingspeak):
-    # FIXME: Handle device unavailability and temporary disconnection
-
-    log.info("Connecting to %s...", device_path)
-    receiver = serial.Serial(device_path, 9600)
-    log.info("Connected to %s.", device_path)
-
-    while True:
-        line = receiver.readline(1024).rstrip(b"\r\n")
-
-        if line.startswith(b"> "):
-            on_sensor_message(thingspeak, line[2:])
-        else:
-            try:
-                line = line.decode("utf-8")
-            except ValueError:
-                log.error("Got an invalid UTF-8 string from port.")
-            else:
-                log.info("> %s", line)
+def drop_none(d):
+    return {k: v for k, v in d.items() if v is not None}
 
 
-def on_sensor_message(thingspeak, message):
-    try:
-        if len(message) != 6:
-            raise ValueError
-
-        sensor_id, humidity, temperature = (int(message[char:char+2], 16) for char in range(0, len(message), 2))
-    except ValueError:
-        log.error("Got an invalid sensor message from receiver: %r.", message)
-        return
-
-    # FIXME: support unknown values
-    thingspeak.on_sensor_metrics(sensor_id, humidity, temperature)
-
-
-# FIXME: Termination signal handling
 def main():
+    psys.process.add_terminate_signal_handler(lambda: sys.exit("Got a termination UNIX signal. Exiting..."))
+    psys.process.init(handle_unix_signals=True)
+
     binary_path = os.path.abspath(__file__)
     config_path = os.path.join(os.path.dirname(binary_path), "flatmon.conf.yaml")
 
@@ -163,12 +236,11 @@ def main():
         config = load_config(config_path)
         pcli.log.setup(__name__)
 
-        thingspeak = Thingspeak(config["thingspeak"])
-        monitor(config["receiver"]["device"], thingspeak)
+        with Thingspeak(config["thingspeak"]) as thingspeak:
+            monitor = Monitor(config["receiver"]["device"], thingspeak)
+            monitor.start()
     except Error as e:
         sys.exit("Error: {}".format(e))
-    except SystemExit:
-        sys.exit("Exiting...")
 
 
 if __name__ == "__main__":

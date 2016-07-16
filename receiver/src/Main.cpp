@@ -2,9 +2,12 @@
 
 #include <Util.h>
 #include <Util/Assertion.hpp>
+#include <Util/Constants.hpp>
 #include <Util/Logging.hpp>
 
 #include <Common/SensorMessage.hpp>
+
+namespace Constants = Util::Constants;
 
 using Util::Logging::log;
 using Common::SensorMessage;
@@ -42,19 +45,30 @@ void sendMessageToServer(const void* data, size_t size) {
 
 void setup() {
     Util::Logging::init();
-    Serial.begin(9600);
-
-    log(F("Initializing..."));
     if(!RECEIVER.init())
         UTIL_LOGICAL_ERROR(F("Failed to initialize the receiver."));
 
+    log(F("Listening to messages from sensors..."));
+
+    TimeMillis lastHeartbeatTime = millis();
     uint8_t sensorMessageBuf[sizeof(SensorMessage) + 1];
     uint8_t messageSize;
 
     while(true) {
         messageSize = sizeof sensorMessageBuf;
-        if(!RECEIVER.recv(sensorMessageBuf, &messageSize))
+
+        if(!RECEIVER.recv(sensorMessageBuf, &messageSize)) {
+            TimeMillis curTime = millis();
+
+            if(curTime - lastHeartbeatTime >= Constants::MINUTE_MILLIS) {
+                log(F("I'm alive but there are no messages from sensors."));
+                lastHeartbeatTime = curTime;
+            }
+
             continue;
+        }
+
+        lastHeartbeatTime = millis();
 
         if(messageSize != sizeof(SensorMessage)) {
             log(F("Got a message with invalid size."));
@@ -62,7 +76,7 @@ void setup() {
         }
 
         SensorMessage* message = reinterpret_cast<SensorMessage*>(sensorMessageBuf);
-        log(millis() / 1000, F(": Got a message from #"), message->sensorId, F(" sensor."));
+        log(F("Got a message from #"), message->sensorId, F(" sensor."));
         sendMessageToServer(message, sizeof(SensorMessage));
     }
 }
