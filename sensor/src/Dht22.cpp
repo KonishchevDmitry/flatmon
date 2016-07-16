@@ -6,7 +6,11 @@
 
 #include "Dht22.hpp"
 
+#define DHT22_ENABLE_PROFILING 0
+#define DHT22_ENABLE_VERBOSE_PROFILING DHT22_ENABLE_PROFILING && UTIL_LOG_VERBOSITY > 0
+
 using Util::Logging::log;
+using Util::Logging::vlog;
 namespace Constants = Util::Constants;
 
 enum class Dht22::State: uint8_t {start_reading, reading};
@@ -89,10 +93,10 @@ void Dht22::onStartReading() {
     this->scheduleAfter(10);
 }
 
-// FIXME: A shitty-written mockup of DHT22 sensor reading
 void Dht22::onReading() {
-    // FIXME: drop
-    TimeMicros startTime = micros();
+    #if DHT22_ENABLE_PROFILING
+        TimeMicros readingStartTime = micros();
+    #endif
 
     digitalWrite(dataPin_, HIGH);
     delayMicroseconds(30);
@@ -104,49 +108,62 @@ void Dht22::onReading() {
         return this->onError();
     }
 
-    // FIXME: increase timeouts by overhead value?
-
-    // FIXME: drop
-    TimeMicros lowVoltageStartTime = micros();
+    #if DHT22_ENABLE_PROFILING
+        TimeMicros lowLevelStartTime = micros();
+    #endif
 
     if(!this->waitForLogicLevel(HIGH, 80)) {
-        log(F("Failed to receive 'prepare to receive data' signal from DHT22"));
+        log(F("Failed to receive 'prepare to receive data' signal from DHT22."));
         return this->onError();
     }
 
-    // FIXME: drop
-    TimeMicros highVoltageStartTime = micros();
+    #if DHT22_ENABLE_PROFILING
+        TimeMicros highLevelStartTime = micros();
+    #endif
 
     if(!this->waitForLogicLevel(LOW, 80)) {
-        log(F("Failed to receive 'start data transmission' signal from DHT22"));
+        log(F("Failed to receive 'start data transmission' signal from DHT22."));
         return this->onError();
     }
 
-    // FIXME: drop
-    TimeMicros transmissionStartTime = micros();
-    log(F("Low level duration: "), highVoltageStartTime - lowVoltageStartTime);
-    log(F("High level duration: "), transmissionStartTime - highVoltageStartTime);
+    #if DHT22_ENABLE_PROFILING
+        TimeMicros transmissionStartTime = micros();
+    #endif
 
-    /*
-    while(true) {
-        // FIXME: negative temperature support
-        // uint16_t garbage = receiveData(dataPin_, 1);
-        uint16_t first = receiveData(dataPin_, 16);
-        uint16_t second = receiveData(dataPin_, 16);
-        uint16_t checksum = receiveData(dataPin_, 8);
+    uint16_t payload[2], checksum;
+    if(!receiveData(&payload[0], 16) || !receiveData(&payload[1], 16) || !receiveData(&checksum, 8))
+        return this->onError();
 
-        uint8_t* data1 = reinterpret_cast<uint8_t*>(&first);
-        uint8_t* data2 = reinterpret_cast<uint8_t*>(&second);
-        uint8_t dataChecksum = *data1 + *(data1 + 1) + *data2 + *(data2 + 1);
+    #if DHT22_ENABLE_PROFILING
+        TimeMicros readingEndTime = micros();
 
-        // interrupts();
+        log(F("DHT22 low level duration: "), highLevelStartTime - lowLevelStartTime, F("."));
+        log(F("DHT22 high level duration: "), transmissionStartTime - highLevelStartTime, F("."));
+        log(F("DHT22 total reading time: "), readingEndTime - readingStartTime, F("."));
+    #endif
 
-        log("Result: ", first, " ", second, " ", checksum == dataChecksum);
-        pinMode(dataPin_, OUTPUT);
-        digitalWrite(dataPin_, HIGH);
-        delay(3000);
+    uint8_t payloadChecksum = 0;
+    for(size_t byteId = 0; byteId < sizeof payload; byteId++)
+        payloadChecksum += reinterpret_cast<uint8_t*>(payload)[byteId];
 
-    */
+    if(payloadChecksum != checksum) {
+        log(F("Got a corrupted message from DHT22: checksum mismatch."));
+        return this->onError();
+    }
+
+    int8_t humidity = lround(float(payload[0]) / 10);
+    int8_t temperature = lround(float(payload[1]) / 10);
+    log(F("Humidity: "), int(humidity), F("%."));
+    log(F("Temperature: "), int(temperature), F("C."));
+
+    // FIXME: on error
+    pinMode(dataPin_, OUTPUT);
+    digitalWrite(dataPin_, HIGH);
+
+    this->state_ = State::start_reading;
+    this->scheduleAfter(POLLING_PERIOD);
+
+    // FIXME
     /*
     values_.add(value);
 
@@ -163,24 +180,26 @@ void Dht22::onError() {
     UTIL_ASSERT(false);
 }
 
-// FIXME: A shitty-written mockup of DHT22 sensor reading
 bool Dht22::receiveData(uint16_t* data, uint8_t size) {
     *data = 0;
 
-    // FIXME: drop
-    int bitId = 0;
-    TimeMicros transmitDurations[size];
-    TimeMicros durations[size];
+    constexpr TimeMicros zeroBitDuration = 28;
+    constexpr TimeMicros oneBitDuration = 70;
+    constexpr TimeMicros oneBitStartDuration = (oneBitDuration - zeroBitDuration) / 2 + zeroBitDuration;
+
+    #if DHT22_ENABLE_VERBOSE_PROFILING
+        uint8_t bitsNum = size;
+        TimeMicros transmissionSignalDurations[bitsNum];
+        TimeMicros bitDurations[bitsNum];
+    #endif
 
     while(size) {
-        // FIXME: increase timeouts by overhead value?
-
-        // FIXME: drop
-        TimeMicros transmissionSignalStartTime = micros();
+        #if DHT22_ENABLE_VERBOSE_PROFILING
+            TimeMicros transmissionStartTime = micros();
+        #endif
 
         if(!this->waitForLogicLevel(HIGH, 50)) {
             log(F("Failed to receive 'bit data' signal from DHT22."));
-            this->onError();
             return false;
         }
 
@@ -188,42 +207,50 @@ bool Dht22::receiveData(uint16_t* data, uint8_t size) {
 
         if(!this->waitForLogicLevel(LOW, 70)) {
             log(F("Failed to receive 'end of bit data' signal from DHT22."));
-            this->onError();
             return false;
         }
 
         TimeMicros bitDuration = micros() - bitStartTime;
 
-        // FIXME: drop
-        durations[bitId] = bitDuration;
-        transmitDurations[bitId] = bitStartTime - transmissionSignalStartTime;
+        #if DHT22_ENABLE_VERBOSE_PROFILING
+            bitDurations[bitsNum - size] = bitDuration;
+            transmissionSignalDurations[bitsNum - size] = bitStartTime - transmissionStartTime;
+        #endif
 
         *data <<= 1;
-        if(bitDuration > 40) // FIXME: alter value
+        if(bitDuration >= oneBitStartDuration)
             *data |= 1;
 
-        ++bitId;
+        --size;
     }
 
-    // FIXME: drop
+    #if DHT22_ENABLE_VERBOSE_PROFILING
     {
-        char buf[100];
-        size_t curPos = 0;
-        for(int bitId = 0; bitId < size; bitId++) {
-            size_t freeSpace = sizeof buf - curPos;
-            size_t length = snprintf(buf + curPos, freeSpace, " %ld", durations[bitId]);
-            UTIL_ASSERT(length < freeSpace);
-            curPos += length;
+        char durationsBuf[3 * bitsNum + 1];
+        size_t bufPos;
+
+        bufPos = 0;
+        for(TimeMicros transmissionSignalDuration : transmissionSignalDurations) {
+            bufPos += snprintf(durationsBuf + bufPos, sizeof durationsBuf - bufPos, " %ld", transmissionSignalDuration);
+            UTIL_ASSERT(bufPos < sizeof durationsBuf);
         }
-        // FIXME: check also transmitDurations
-        log("Bit durations:", buf);
+        vlog(F("DHT22 transmission signal durations:"), durationsBuf);
+
+        bufPos = 0;
+        for(TimeMicros bitDuration : bitDurations) {
+            bufPos += snprintf(durationsBuf + bufPos, sizeof durationsBuf - bufPos, " %ld", bitDuration);
+            UTIL_ASSERT(bufPos < sizeof durationsBuf);
+        }
+        vlog(F("DHT22 bit durations:"), durationsBuf);
     }
+    #endif
 
     return true;
 }
 
 bool Dht22::waitForLogicLevel(bool level, TimeMicros timeout) {
-    TimeMicros timeoutTime = micros() + timeout;
+    const TimeMicros precision = 10; // FIXME
+    TimeMicros timeoutTime = micros() + timeout + precision;
 
     do {
         if(digitalRead(dataPin_) == level)

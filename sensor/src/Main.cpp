@@ -8,6 +8,7 @@
 #include "Buzzer.hpp"
 #include "CO2Sensor.hpp"
 #include "Config.hpp"
+#include "Dht22.hpp"
 #include "Indication.hpp"
 #include "TemperatureSensor.hpp"
 
@@ -75,10 +76,14 @@ void setup() {
     #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
         LedGroup co2Leds(&leds, 0, 4);
         CO2Sensor co2Sensor(&SOFTWARE_SERIAL, &scheduler, &co2Leds, &buzzer);
-    #endif
 
-    LedGroup temperatureLeds(&leds, 4, 4);
-    TemperatureSensor temperatureSensor(TEMPERATURE_SENSOR_PIN, &scheduler, &temperatureLeds, &buzzer);
+        LedGroup temperatureLeds(&leds, 4, 4);
+        TemperatureSensor temperatureSensor(TEMPERATURE_SENSOR_PIN, &scheduler, &temperatureLeds, &buzzer);
+    #else
+        LedGroup humidityLeds(&leds, 0, 4);
+        LedGroup temperatureLeds(&leds, 4, 4);
+        Dht22 dht22(DHT_22_SENSOR_PIN, &scheduler, &humidityLeds, &temperatureLeds, &buzzer);
+    #endif
 
     #if CONFIG_ENABLE_TRANSMITTER
         Transmitter transmitter(&TRANSMITTER, &scheduler);

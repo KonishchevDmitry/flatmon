@@ -20,6 +20,7 @@ class CO2Sensor: public Util::Task {
     public:
         enum class Comfort: uint8_t;
 
+    // FIXME: Consider to use PWM output for sensor reading to free up UART ports
     #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
         typedef AltSoftSerial SensorSerial;
     #else
