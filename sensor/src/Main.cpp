@@ -15,7 +15,7 @@
 using Util::Logging::log;
 
 #if CONFIG_ENABLE_TRANSMITTER
-    const int TRANSMITTER_SPEED = 2000;
+    const int TRANSMITTER_SPEED = 1000;
     const int TRANSMITTER_TX_PIN = 9;
     const int TRANSMITTER_RX_PIN = A4;
     const int TRANSMITTER_PTT_PIN = A5;

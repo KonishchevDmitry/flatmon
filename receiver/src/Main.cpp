@@ -15,7 +15,7 @@ using Common::SensorMessage;
 namespace {
 
 // FIXME: Add unusable PWM notes (because of Timer1 usage)
-const int TRANSMITTER_SPEED = 2000;
+const int TRANSMITTER_SPEED = 1000;
 const int TRANSMITTER_RX_PIN = 8;
 const int TRANSMITTER_TX_PIN = A4;
 const int TRANSMITTER_PTT_PIN = A5;

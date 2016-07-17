@@ -226,21 +226,24 @@ def drop_none(d):
 
 
 def main():
-    psys.process.add_terminate_signal_handler(lambda: sys.exit("Got a termination UNIX signal. Exiting..."))
-    psys.process.init(handle_unix_signals=True)
-
-    binary_path = os.path.abspath(__file__)
-    config_path = os.path.join(os.path.dirname(binary_path), "flatmon.conf.yaml")
+    pcli.log.setup(__name__)
 
     try:
+        psys.process.add_terminate_signal_handler(lambda: sys.exit("Got a termination UNIX signal. Exiting..."))
+        psys.process.init(handle_unix_signals=True)
+
+        binary_path = os.path.abspath(__file__)
+        config_path = os.path.join(os.path.dirname(binary_path), "flatmon.conf.yaml")
+
         config = load_config(config_path)
-        pcli.log.setup(__name__)
 
         with Thingspeak(config["thingspeak"]) as thingspeak:
             monitor = Monitor(config["receiver"]["device"], thingspeak)
             monitor.start()
     except Error as e:
         sys.exit("Error: {}".format(e))
+    except SystemExit as e:
+        log.info(e)
 
 
 if __name__ == "__main__":
