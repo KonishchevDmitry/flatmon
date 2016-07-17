@@ -6,7 +6,7 @@
 
 struct ShiftRegisterLeds {
     public:
-        typedef uint8_t LedsValue;
+        typedef uint16_t LedsValue;
         static const uint8_t MAX_LEDS_NUM = sizeof(LedsValue) * 8;
 
     public:
@@ -54,6 +54,7 @@ class LedProgressTask: public Util::Task {
         uint8_t curLedNum_;
 };
 
+// FIXME: Do we really need a few transistors here?
 template <size_t ledsNum>
 class LedBrightnessRegulator: public Util::Task {
     public:
