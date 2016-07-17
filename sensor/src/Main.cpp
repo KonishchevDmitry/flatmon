@@ -1,3 +1,5 @@
+// FIXME: Measure current consumption of the scheme. Can Arduino Uno provide it without any problems?
+
 #include <Util.h>
 #include <Util/Assertion.hpp>
 #include <Util/Constants.hpp>
@@ -47,13 +49,14 @@ const int CO2_SENSOR_TX_PIN = 8;
 // One 100nF capacitor should be added between VDD and GND for wave filtering.
 const int DHT_22_SENSOR_PIN = 12;
 
-const int TEMPERATURE_SENSOR_PIN = A0;
+// FIXME: Deprecate by DHT22
+const int TEMPERATURE_SENSOR_PIN = A1;
 
 const int SHIFT_REGISTER_DATA_PIN = 10; // SER
 const int SHIFT_REGISTER_CLOCK_PIN = 3; // SRCLK
 const int SHIFT_REGISTER_LATCH_PIN = 2; // RCLK
 
-const int LIGHT_SENSOR_PIN = A1;
+const int LIGHT_SENSOR_PIN = A0;
 const uint8_t LED_BRIGHTNESS_CONTROLLING_PINS[] = {6};
 
 // Attention: Use of tone() function interferes with PWM output on pins 3 and 11 (on boards other than the Mega).

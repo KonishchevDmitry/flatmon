@@ -14,7 +14,7 @@ using Util::Logging::log;
 template <size_t ledsNum>
 LedBrightnessRegulator<ledsNum>::LedBrightnessRegulator(
     uint8_t lightSensorPin, const uint8_t transistorBasePins[ledsNum], Util::TaskScheduler* scheduler
-) {
+): lightSensorPin_(lightSensorPin) {
     memcpy(transistorBasePins_, transistorBasePins, sizeof transistorBasePins_);
     #if UTIL_ENABLE_LOGGING
         lastLogTime_ = 0;
