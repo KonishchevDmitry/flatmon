@@ -13,29 +13,17 @@ namespace Constants = Util::Constants;
 
 enum class Dht22::State: uint8_t {start_reading, reading};
 
-typedef Dht22::HumidityComfort HumidityComfort;
-enum class Dht22::HumidityComfort: uint8_t {unknown, high, normal, low, very_low};
-static const char* HUMIDITY_COMFORT_NAMES[] = {"unknown", "high", "normal", "low", "very-low"};
-
 typedef Dht22::TemperatureComfort TemperatureComfort;
 enum class Dht22::TemperatureComfort: uint8_t {unknown, cold, normal, warm, hot};
 static const char* TEMPERATURE_COMFORT_NAMES[] = {"unknown", "cold", "normal", "warm", "hot"};
 
+typedef Dht22::HumidityComfort HumidityComfort;
+enum class Dht22::HumidityComfort: uint8_t {unknown, high, normal, low, very_low};
+static const char* HUMIDITY_COMFORT_NAMES[] = {"unknown", "high", "normal", "low", "very-low"};
+
 namespace {
     constexpr auto POLLING_PERIOD = 10 * Constants::SECOND_MILLIS;
     constexpr auto COLLECTION_PERIOD = 2 * Constants::SECOND_MILLIS;
-
-    // FIXME: Alter the values
-    HumidityComfort getHumidityComfort(uint8_t humidity) {
-        if(humidity <= 30)
-            return HumidityComfort::very_low;
-        else if(humidity <= 40)
-            return HumidityComfort::low;
-        else if(humidity <= 60)
-            return HumidityComfort::normal;
-        else
-            return HumidityComfort::high;
-    }
 
     // FIXME: Alter the values
     TemperatureComfort getTemperatureComfort(int8_t temperature) {
@@ -48,29 +36,34 @@ namespace {
         else
             return TemperatureComfort::hot;
     }
+
+    // FIXME: Alter the values
+    HumidityComfort getHumidityComfort(uint8_t humidity) {
+        if(humidity <= 30)
+            return HumidityComfort::very_low;
+        else if(humidity <= 40)
+            return HumidityComfort::low;
+        else if(humidity <= 60)
+            return HumidityComfort::normal;
+        else
+            return HumidityComfort::high;
+    }
 }
 
 Dht22::Dht22(uint8_t dataPin, Util::TaskScheduler* scheduler,
-             LedGroup* humidityLedGroup, LedGroup* temperatureLedGroup, Buzzer* buzzer)
-: dataPin_(dataPin), state_(State::start_reading), humidityComfort_(HumidityComfort::unknown),
-  humidityLedGroup_(humidityLedGroup), humidityLedProgress_(humidityLedGroup),
-  temperatureComfort_(TemperatureComfort::unknown), temperatureLedGroup_(temperatureLedGroup),
-  temperatureLedProgress_(temperatureLedGroup), buzzer_(buzzer) {
+             LedGroup* temperatureLedGroup, LedGroup* humidityLedGroup, Buzzer* buzzer)
+: dataPin_(dataPin), state_(State::start_reading), temperatureComfort_(TemperatureComfort::unknown),
+  temperatureLedGroup_(temperatureLedGroup), temperatureLedProgress_(temperatureLedGroup),
+  humidityComfort_(HumidityComfort::unknown), humidityLedGroup_(humidityLedGroup),
+  humidityLedProgress_(humidityLedGroup),
+  buzzer_(buzzer) {
     this->stopReading();
 
-    scheduler->addTask(&humidityLedProgress_);
     scheduler->addTask(&temperatureLedProgress_);
+    scheduler->addTask(&humidityLedProgress_);
 
     scheduler->addTask(this);
     this->scheduleAfter(COLLECTION_PERIOD);
-}
-
-bool Dht22::getHumidity(uint8_t *humidity) {
-    if(humidityComfort_ == HumidityComfort::unknown)
-        return false;
-
-    *humidity = humidity_;
-    return true;
 }
 
 bool Dht22::getTemperature(int8_t *temperature) {
@@ -78,6 +71,14 @@ bool Dht22::getTemperature(int8_t *temperature) {
         return false;
 
     *temperature = temperature_;
+    return true;
+}
+
+bool Dht22::getHumidity(uint8_t *humidity) {
+    if(humidityComfort_ == HumidityComfort::unknown)
+        return false;
+
+    *humidity = humidity_;
     return true;
 }
 
@@ -193,21 +194,6 @@ void Dht22::onError() {
     this->scheduleAfter(POLLING_PERIOD);
 }
 
-void Dht22::onHumidityComfort(HumidityComfort comfort) {
-    if(comfort == humidityComfort_)
-        return;
-
-    if(comfort == HumidityComfort::unknown)
-        humidityLedProgress_.resume();
-    else if(humidityComfort_ == HumidityComfort::unknown)
-        humidityLedProgress_.pause();
-    else
-        buzzer_->notify();
-
-    humidityComfort_ = comfort;
-    humidityLedGroup_->setLed(int(comfort));
-}
-
 void Dht22::onTemperatureComfort(TemperatureComfort comfort) {
     if(comfort == temperatureComfort_)
         return;
@@ -221,6 +207,21 @@ void Dht22::onTemperatureComfort(TemperatureComfort comfort) {
 
     temperatureComfort_ = comfort;
     temperatureLedGroup_->setLed(int(comfort));
+}
+
+void Dht22::onHumidityComfort(HumidityComfort comfort) {
+    if(comfort == humidityComfort_)
+        return;
+
+    if(comfort == HumidityComfort::unknown)
+        humidityLedProgress_.resume();
+    else if(humidityComfort_ == HumidityComfort::unknown)
+        humidityLedProgress_.pause();
+    else
+        buzzer_->notify();
+
+    humidityComfort_ = comfort;
+    humidityLedGroup_->setLed(int(comfort));
 }
 
 bool Dht22::receiveData(uint16_t* data, uint8_t size) {

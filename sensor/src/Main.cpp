@@ -77,15 +77,16 @@ void setup() {
         LIGHT_SENSOR_PIN, LED_BRIGHTNESS_CONTROLLING_PINS, &scheduler);
 
     #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
-        LedGroup co2Leds(&leds, 0, 4);
+        // FIXME
         CO2Sensor co2Sensor(&SOFTWARE_SERIAL, &scheduler, &co2Leds, &buzzer);
-
         LedGroup temperatureLeds(&leds, 4, 4);
         TemperatureSensor temperatureSensor(TEMPERATURE_SENSOR_PIN, &scheduler, &temperatureLeds, &buzzer);
     #else
-        LedGroup humidityLeds(&leds, 0, 4);
-        LedGroup temperatureLeds(&leds, 4, 4);
-        Dht22 dht22(DHT_22_SENSOR_PIN, &scheduler, &humidityLeds, &temperatureLeds, &buzzer);
+        LedGroup temperatureLeds(&leds, 0, 4);
+        LedGroup humidityLeds(&leds, 4, 4);
+        Dht22 dht22(DHT_22_SENSOR_PIN, &scheduler, &temperatureLeds, &humidityLeds, &buzzer);
+
+        LedGroup co2Leds(&leds, 8, 4);
     #endif
 
     #if CONFIG_ENABLE_TRANSMITTER

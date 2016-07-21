@@ -9,19 +9,19 @@
 
 class Dht22: public Util::Task {
     public:
-        enum class HumidityComfort: uint8_t;
         enum class TemperatureComfort: uint8_t;
+        enum class HumidityComfort: uint8_t;
 
     private:
         enum class State: uint8_t;
 
     public:
         Dht22(uint8_t dataPin, Util::TaskScheduler* scheduler,
-              LedGroup* humidityLedGroup, LedGroup* temperatureLedGroup, Buzzer* buzzer);
+              LedGroup* temperatureLedGroup, LedGroup* humidityLedGroup, Buzzer* buzzer);
 
     public:
-        bool getHumidity(uint8_t* humidity);
         bool getTemperature(int8_t* temperature);
+        bool getHumidity(uint8_t* humidity);
 
         virtual void execute();
 
@@ -30,8 +30,8 @@ class Dht22: public Util::Task {
         void onReading();
         void onError();
 
-        void onHumidityComfort(HumidityComfort comfort);
         void onTemperatureComfort(TemperatureComfort comfort);
+        void onHumidityComfort(HumidityComfort comfort);
 
         bool receiveData(uint16_t* data, uint8_t size);
         bool waitForLogicLevel(bool level, TimeMicros timeout);
@@ -41,15 +41,15 @@ class Dht22: public Util::Task {
         uint8_t dataPin_;
         State state_;
 
-        uint8_t humidity_;
-        HumidityComfort humidityComfort_;
-        LedGroup* humidityLedGroup_;
-        LedProgressTask humidityLedProgress_;
-
         int8_t temperature_;
         TemperatureComfort temperatureComfort_;
         LedGroup* temperatureLedGroup_;
         LedProgressTask temperatureLedProgress_;
+
+        uint8_t humidity_;
+        HumidityComfort humidityComfort_;
+        LedGroup* humidityLedGroup_;
+        LedProgressTask humidityLedProgress_;
 
         Buzzer* buzzer_;
 };
