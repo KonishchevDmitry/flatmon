@@ -14,9 +14,9 @@ ShiftRegisterLeds::ShiftRegisterLeds(uint8_t dataPin, uint8_t clockPin, uint8_t 
 void ShiftRegisterLeds::set(LedsValue leds) {
 #if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__)
     #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-        int curByte = 0, lastByte = sizeof leds - 1, incByte = 1;
-    #else
         int curByte = sizeof leds - 1, lastByte = 0, incByte = -1;
+    #else
+        int curByte = 0, lastByte = sizeof leds - 1, incByte = 1;
     #endif
 #else
     #error Unable to determine platform endianness
