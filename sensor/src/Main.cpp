@@ -49,9 +49,6 @@ const int CO2_SENSOR_TX_PIN = 8;
 // One 100nF capacitor should be added between VDD and GND for wave filtering.
 const int DHT_22_SENSOR_PIN = 12;
 
-// FIXME: Deprecate by DHT22
-const int TEMPERATURE_SENSOR_PIN = A1;
-
 const int SHIFT_REGISTER_DATA_PIN = 10; // SER
 const int SHIFT_REGISTER_CLOCK_PIN = 3; // SRCLK
 const int SHIFT_REGISTER_LATCH_PIN = 2; // RCLK
@@ -76,17 +73,17 @@ void setup() {
     LedBrightnessRegulator<ledsNum> ledBrightnessRegulator(
         LIGHT_SENSOR_PIN, LED_BRIGHTNESS_CONTROLLING_PINS, &scheduler);
 
-    #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
-        // FIXME
-        CO2Sensor co2Sensor(&SOFTWARE_SERIAL, &scheduler, &co2Leds, &buzzer);
-        LedGroup temperatureLeds(&leds, 4, 4);
-        TemperatureSensor temperatureSensor(TEMPERATURE_SENSOR_PIN, &scheduler, &temperatureLeds, &buzzer);
-    #else
-        LedGroup temperatureLeds(&leds, 0, 4);
-        LedGroup humidityLeds(&leds, 4, 4);
-        Dht22 dht22(DHT_22_SENSOR_PIN, &scheduler, &temperatureLeds, &humidityLeds, &buzzer);
+    LedGroup temperatureLeds(&leds, 0, 4);
+    LedGroup humidityLeds(&leds, 4, 4);
+    Dht22 dht22(DHT_22_SENSOR_PIN, &scheduler, &temperatureLeds, &humidityLeds, &buzzer);
 
-        LedGroup co2Leds(&leds, 8, 4);
+    LedGroup co2Leds(&leds, 8, 4);
+    #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
+        CO2Sensor co2Sensor(&SOFTWARE_SERIAL, &scheduler, &co2Leds, &buzzer);
+    #else
+        #if UTIL_ENABLE_LOGGING
+            CO2Sensor co2Sensor(&Serial, &scheduler, &co2Leds, &buzzer);
+        #endif
     #endif
 
     #if CONFIG_ENABLE_TRANSMITTER

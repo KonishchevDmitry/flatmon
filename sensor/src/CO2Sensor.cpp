@@ -10,8 +10,8 @@ namespace Constants = Util::Constants;
 
 enum class CO2Sensor::State: uint8_t {read, reading};
 
-enum class CO2Sensor::Comfort: uint8_t {unknown, normal, warning, low, critical};
-static const char* COMFORT_NAMES[] = {"unknown", "normal", "warning", "low", "critical"};
+enum class CO2Sensor::Comfort: uint8_t {unknown, normal, warning, high, critical};
+static const char* COMFORT_NAMES[] = {"unknown", "normal", "warning", "high", "critical"};
 typedef CO2Sensor::Comfort Comfort;
 
 namespace {
@@ -36,7 +36,7 @@ namespace {
         else if(roundedConcentration < 1400)
             return Comfort::warning;
         else if(roundedConcentration < 1900)
-            return Comfort::low;
+            return Comfort::high;
         else
             return Comfort::critical;
     }
