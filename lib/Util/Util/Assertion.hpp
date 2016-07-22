@@ -9,7 +9,7 @@
             ::Util::abort(F(__FILE__), __LINE__, ##__VA_ARGS__); \
     } while(false)
 #else
-    #define UTIL_ASSERT(expression) do { \
+    #define UTIL_ASSERT(expression, ...) do { \
         if(!(expression))                \
             ::Util::abort();             \
     } while(false)
