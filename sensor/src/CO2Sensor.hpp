@@ -34,6 +34,7 @@ class CO2Sensor: public Util::Task {
         CO2Sensor(SensorSerial* sensorSerial, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer);
 
     public:
+        bool getConcentration(uint16_t* concentration) const;
         virtual void execute();
 
     private:
@@ -44,8 +45,11 @@ class CO2Sensor: public Util::Task {
 
     private:
         SensorSerial* sensorSerial_;
+
         State state_;
         Comfort comfort_;
+        uint16_t concentration_;
+
         byte response_[9];
         uint8_t receivedBytes_;
 

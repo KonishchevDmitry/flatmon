@@ -20,8 +20,8 @@ class Dht22: public Util::Task {
               LedGroup* temperatureLedGroup, LedGroup* humidityLedGroup, Buzzer* buzzer);
 
     public:
-        bool getTemperature(int8_t* temperature);
-        bool getHumidity(uint8_t* humidity);
+        bool getTemperature(int8_t* temperature) const;
+        bool getHumidity(uint8_t* humidity) const;
 
         virtual void execute();
 

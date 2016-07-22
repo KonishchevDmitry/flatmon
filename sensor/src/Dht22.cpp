@@ -66,7 +66,7 @@ Dht22::Dht22(uint8_t dataPin, Util::TaskScheduler* scheduler,
     this->scheduleAfter(COLLECTION_PERIOD);
 }
 
-bool Dht22::getTemperature(int8_t *temperature) {
+bool Dht22::getTemperature(int8_t *temperature) const {
     if(temperatureComfort_ == TemperatureComfort::unknown)
         return false;
 
@@ -74,7 +74,7 @@ bool Dht22::getTemperature(int8_t *temperature) {
     return true;
 }
 
-bool Dht22::getHumidity(uint8_t *humidity) {
+bool Dht22::getHumidity(uint8_t *humidity) const {
     if(humidityComfort_ == HumidityComfort::unknown)
         return false;
 

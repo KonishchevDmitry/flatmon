@@ -11,10 +11,12 @@ struct SensorMessage {
     // FIXME: Alter the values
     static constexpr uint8_t UNKNOWN_HUMIDITY = 127;
     static constexpr int8_t UNKNOWN_TEMPERATURE = 127;
+    static constexpr uint16_t UNKNOWN_CO2_CONCENTRATION = 0xFFFF;
 
     uint8_t sensorId;
-    uint8_t humidity;
     int8_t temperature;
+    uint8_t humidity;
+    uint16_t co2Concentration;
 } __attribute__((packed));
 
 }

@@ -11,8 +11,9 @@ using Util::Logging::vlog;
 using Common::SensorMessage;
 namespace Constants = Util::Constants;
 
-Transmitter::Transmitter(RH_ASK* transmitter, Util::TaskScheduler* scheduler, Dht22* dht22)
-: transmitter_(transmitter), dht22_(dht22) {
+Transmitter::Transmitter(RH_ASK* transmitter, Util::TaskScheduler* scheduler,
+                         const Dht22* dht22, const CO2Sensor* co2Sensor)
+: transmitter_(transmitter), dht22_(dht22), co2Sensor_(co2Sensor) {
     if(!transmitter->init())
         UTIL_LOGICAL_ERROR(F("Failed to initialize the transmitter."));
 
@@ -28,10 +29,15 @@ void Transmitter::execute() {
     int8_t temperature = SensorMessage::UNKNOWN_TEMPERATURE;
     dht22_->getTemperature(&temperature);
 
+    uint16_t co2Concentration = SensorMessage::UNKNOWN_CO2_CONCENTRATION;
+    if(co2Sensor_)
+        co2Sensor_->getConcentration(&co2Concentration);
+
     SensorMessage message = {
         sensorId: Config::SENSOR_ID,
-        humidity: humidity,
         temperature: temperature,
+        humidity: humidity,
+        co2Concentration: co2Concentration,
     };
 
     transmitter_->send(reinterpret_cast<const uint8_t*>(&message), sizeof message);

@@ -2,7 +2,9 @@
 #define Config_hpp
 
 #define CONFIG_ENABLE_TRANSMITTER 0
+
 #define CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL !CONFIG_ENABLE_TRANSMITTER
+#define CONFIG_ENABLE_CO2_SENSOR (CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL || !UTIL_ENABLE_LOGGING)
 
 namespace Config {
     enum class SensorId: uint8_t {little_room};

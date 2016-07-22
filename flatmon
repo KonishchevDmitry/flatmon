@@ -38,10 +38,11 @@ class Sensor:
         self.__channel_last_update_time = 0
         self.__sending_thread = None
 
-    def on_metrics(self, humidity=None, temperature=None):
+    def on_metrics(self, temperature=None, humidity=None, co2_concentration=None):
         metrics = drop_none({
-            "field1": humidity,
-            "field2": temperature,
+            "field1": temperature,
+            "field2": humidity,
+            "field3": co2_concentration,
         })
 
         if not metrics:
@@ -103,7 +104,7 @@ class Thingspeak:
         for sensor in self.__sensors.values():
             sensor.wait_for_active_requests()
 
-    def on_sensor_metrics(self, sensor_id, humidity=None, temperature=None):
+    def on_sensor_metrics(self, sensor_id, temperature=None, humidity=None, co2_concentration=None):
         try:
             sensor = self.__sensors[sensor_id]
         except KeyError:
@@ -111,7 +112,7 @@ class Thingspeak:
             return
 
         log.info("Got metrics from '%s' sensor.", sensor.name)
-        sensor.on_metrics(humidity=humidity, temperature=temperature)
+        sensor.on_metrics(temperature=temperature, humidity=humidity, co2_concentration=co2_concentration)
 
     def send_request(self, method, request):
         response = requests.post("https://api.thingspeak.com/{}.json".format(method), headers={
@@ -173,24 +174,35 @@ class Monitor:
 
     def __on_sensor_message(self, message):
         try:
-            if len(message) != 6:
-                raise ValueError
-
-            sensor_id, humidity, temperature = (int(message[char:char+2], 16) for char in range(0, len(message), 2))
+            sensor_id, temperature, humidity, co2_concentration = self.__unpack_message(message, 1, 1, 1, 2)
         except ValueError:
             log.error("Got an invalid sensor message from receiver: %r.", message)
             return
 
         # FIXME
-        no_value = 127
-
-        if humidity == no_value:
-            humidity = None
-
-        if temperature == no_value:
+        if temperature == 127:
             temperature = None
 
-        self.__thingspeak.on_sensor_metrics(sensor_id, humidity, temperature)
+        # FIXME
+        if humidity == 127:
+            humidity = None
+
+        # FIXME
+        if co2_concentration == 0xFFFF:
+            co2_concentration = None
+
+        self.__thingspeak.on_sensor_metrics(sensor_id, temperature, humidity, co2_concentration)
+
+    @staticmethod
+    def __unpack_message(message, *sizes):
+        if len(message) != sum(sizes) * 2:
+            raise ValueError
+
+        pos = 0
+        for size in sizes:
+            end_pos = pos + size * 2
+            yield int(message[pos:end_pos], 16)
+            pos = end_pos
 
 
 def load_config(path):

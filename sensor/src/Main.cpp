@@ -77,17 +77,24 @@ void setup() {
     LedGroup humidityLeds(&leds, 4, 4);
     Dht22 dht22(DHT_22_SENSOR_PIN, &scheduler, &temperatureLeds, &humidityLeds, &buzzer);
 
-    LedGroup co2Leds(&leds, 8, 4);
-    #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
-        CO2Sensor co2Sensor(&SOFTWARE_SERIAL, &scheduler, &co2Leds, &buzzer);
-    #else
-        #if UTIL_ENABLE_LOGGING
-            CO2Sensor co2Sensor(&Serial, &scheduler, &co2Leds, &buzzer);
+    #if CONFIG_ENABLE_CO2_SENSOR
+        LedGroup co2Leds(&leds, 8, 4);
+
+        #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
+            CO2Sensor::SensorSerial* co2SensorSerial = &SOFTWARE_SERIAL;
+        #else
+            CO2Sensor::SensorSerial* co2SensorSerial = &Serial;
         #endif
+
+        CO2Sensor co2Sensor(co2SensorSerial, &scheduler, &co2Leds, &buzzer);
     #endif
 
     #if CONFIG_ENABLE_TRANSMITTER
-        Transmitter transmitter(&TRANSMITTER, &scheduler, &dht22);
+        Transmitter transmitter(&TRANSMITTER, &scheduler, &dht22,
+        #if CONFIG_ENABLE_CO2_SENSOR
+            &co2Sensor
+        #endif
+        );
     #endif
 
     size_t freeMemorySize = getStackFreeMemorySize();

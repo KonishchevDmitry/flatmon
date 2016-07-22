@@ -51,6 +51,14 @@ CO2Sensor::CO2Sensor(SensorSerial* sensorSerial, Util::TaskScheduler* scheduler,
     this->scheduleAfter(PREHEAT_TIME);
 }
 
+bool CO2Sensor::getConcentration(uint16_t *concentration) const {
+    if(comfort_ == Comfort::unknown)
+        return false;
+
+    *concentration = concentration_;
+    return true;
+}
+
 void CO2Sensor::execute() {
     switch(state_) {
         case State::read:
@@ -81,7 +89,6 @@ void CO2Sensor::onReadConcentration() {
 
     log(F("CO2 read start time: "), millis()); // FIXME: drop
     this->state_ = State::reading;
-    this->scheduleAfter(0);
 }
 
 void CO2Sensor::onReadingConcentration() {
@@ -111,15 +118,14 @@ void CO2Sensor::onReadingConcentration() {
 
     if(response_[0] != 0xFF || response_[responseSize - 1] != checksum || response_[1] != 0x86) {
         log(F("CO2 sensor response validation error."));
-        this->onCommunicationError();
-        return;
+        return this->onCommunicationError();
     }
 
     log(F("CO2 read end time: "), millis()); // FIXME: drop
-    uint16_t concentration = uint16_t(response_[2]) << 8 | response_[3];
+    concentration_ = uint16_t(response_[2]) << 8 | response_[3];
 
-    Comfort comfort = getComfort(concentration);
-    log(F("CO2: "), concentration, F(" ppm ("), COMFORT_NAMES[int(comfort)], F(")."));
+    Comfort comfort = getComfort(concentration_);
+    log(F("CO2: "), concentration_, F(" ppm ("), COMFORT_NAMES[int(comfort)], F(")."));
     this->onComfort(comfort);
 
     this->state_ = State::read;
