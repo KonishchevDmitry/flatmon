@@ -1,5 +1,5 @@
-#ifndef CO2Sensor_hpp
-#define CO2Sensor_hpp
+#ifndef Co2Sensor_hpp
+#define Co2Sensor_hpp
 
 #include <Util/Core.hpp>
 #include <Util/TaskScheduler.hpp>
@@ -16,7 +16,7 @@
 //
 // Notice: Sensor automatically calibrates during a few days. During calibration it should be placed outdoor for some
 // time to determine zero point.
-class CO2Sensor: public Util::Task {
+class Co2Sensor: public Util::Task {
     public:
         enum class Comfort: uint8_t;
 
@@ -31,7 +31,7 @@ class CO2Sensor: public Util::Task {
         enum class State: uint8_t;
 
     public:
-        CO2Sensor(SensorSerial* sensorSerial, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer);
+        Co2Sensor(SensorSerial* sensorSerial, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer);
 
     public:
         bool getConcentration(uint16_t* concentration) const;

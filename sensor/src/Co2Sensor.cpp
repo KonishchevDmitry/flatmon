@@ -3,16 +3,16 @@
 #include <Util/Core.hpp>
 #include <Util/Logging.hpp>
 
-#include "CO2Sensor.hpp"
+#include "Co2Sensor.hpp"
 
 using Util::Logging::log;
 namespace Constants = Util::Constants;
 
-enum class CO2Sensor::State: uint8_t {read, reading};
+enum class Co2Sensor::State: uint8_t {read, reading};
 
-enum class CO2Sensor::Comfort: uint8_t {unknown, normal, warning, high, critical};
+enum class Co2Sensor::Comfort: uint8_t {unknown, normal, warning, high, critical};
 static const char* COMFORT_NAMES[] = {"unknown", "normal", "warning", "high", "critical"};
-typedef CO2Sensor::Comfort Comfort;
+typedef Co2Sensor::Comfort Comfort;
 
 namespace {
     // It looks like sensor measures CO2 concentration each ~ 6 seconds.
@@ -42,7 +42,7 @@ namespace {
     }
 }
 
-CO2Sensor::CO2Sensor(SensorSerial* sensorSerial, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer)
+Co2Sensor::Co2Sensor(SensorSerial* sensorSerial, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer)
 : sensorSerial_(sensorSerial), state_(State::read), comfort_(Comfort::unknown),
   ledGroup_(ledGroup), ledProgress_(ledGroup), buzzer_(buzzer) {
     sensorSerial_->begin(9600);
@@ -51,7 +51,7 @@ CO2Sensor::CO2Sensor(SensorSerial* sensorSerial, Util::TaskScheduler* scheduler,
     this->scheduleAfter(PREHEAT_TIME);
 }
 
-bool CO2Sensor::getConcentration(uint16_t *concentration) const {
+bool Co2Sensor::getConcentration(uint16_t *concentration) const {
     if(comfort_ == Comfort::unknown)
         return false;
 
@@ -59,7 +59,7 @@ bool CO2Sensor::getConcentration(uint16_t *concentration) const {
     return true;
 }
 
-void CO2Sensor::execute() {
+void Co2Sensor::execute() {
     switch(state_) {
         case State::read:
             this->onReadConcentration();
@@ -73,7 +73,7 @@ void CO2Sensor::execute() {
     }
 }
 
-void CO2Sensor::onReadConcentration() {
+void Co2Sensor::onReadConcentration() {
     #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
         sensorSerial_->flushInput();
     #else
@@ -91,7 +91,7 @@ void CO2Sensor::onReadConcentration() {
     this->state_ = State::reading;
 }
 
-void CO2Sensor::onReadingConcentration() {
+void Co2Sensor::onReadingConcentration() {
     const int responseSize = sizeof response_;
 
     while(receivedBytes_ < responseSize) {
@@ -132,13 +132,13 @@ void CO2Sensor::onReadingConcentration() {
     this->scheduleAfter(POLLING_PERIOD);
 }
 
-void CO2Sensor::onCommunicationError() {
+void Co2Sensor::onCommunicationError() {
     this->onComfort(Comfort::unknown);
     this->state_ = State::read;
     this->scheduleAfter(POLLING_PERIOD);
 }
 
-void CO2Sensor::onComfort(Comfort comfort) {
+void Co2Sensor::onComfort(Comfort comfort) {
     if(comfort == comfort_)
         return;
 

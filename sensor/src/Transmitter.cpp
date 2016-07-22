@@ -12,7 +12,7 @@ using Common::SensorMessage;
 namespace Constants = Util::Constants;
 
 Transmitter::Transmitter(RH_ASK* transmitter, Util::TaskScheduler* scheduler,
-                         const Dht22* dht22, const CO2Sensor* co2Sensor)
+                         const Dht22* dht22, const Co2Sensor* co2Sensor)
 : transmitter_(transmitter), dht22_(dht22), co2Sensor_(co2Sensor) {
     if(!transmitter->init())
         UTIL_LOGICAL_ERROR(F("Failed to initialize the transmitter."));

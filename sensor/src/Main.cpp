@@ -8,7 +8,7 @@
 #include <Util/TaskScheduler.hpp>
 
 #include "Buzzer.hpp"
-#include "CO2Sensor.hpp"
+#include "Co2Sensor.hpp"
 #include "Config.hpp"
 #include "Dht22.hpp"
 #include "Indication.hpp"
@@ -81,12 +81,12 @@ void setup() {
         LedGroup co2Leds(&leds, 8, 4);
 
         #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
-            CO2Sensor::SensorSerial* co2SensorSerial = &SOFTWARE_SERIAL;
+            Co2Sensor::SensorSerial* co2SensorSerial = &SOFTWARE_SERIAL;
         #else
-            CO2Sensor::SensorSerial* co2SensorSerial = &Serial;
+            Co2Sensor::SensorSerial* co2SensorSerial = &Serial;
         #endif
 
-        CO2Sensor co2Sensor(co2SensorSerial, &scheduler, &co2Leds, &buzzer);
+        Co2Sensor co2Sensor(co2SensorSerial, &scheduler, &co2Leds, &buzzer);
     #endif
 
     #if CONFIG_ENABLE_TRANSMITTER
