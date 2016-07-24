@@ -133,12 +133,12 @@ void setup() {
         LedGroup co2Leds(&leds, 8, 4);
 
         #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
-            Co2Sensor::SensorSerial* co2SensorSerial = &SOFTWARE_SERIAL;
+            Co2UartSensor::SensorSerial* co2SensorSerial = &SOFTWARE_SERIAL;
         #else
-            Co2Sensor::SensorSerial* co2SensorSerial = &Serial;
+            Co2UartSensor::SensorSerial* co2SensorSerial = &Serial;
         #endif
 
-        Co2Sensor co2Sensor(co2SensorSerial, &scheduler, &co2Leds, &buzzer);
+        Co2UartSensor co2Sensor(co2SensorSerial, &scheduler, &co2Leds, &buzzer);
     #endif
 
     #if CONFIG_ENABLE_TRANSMITTER

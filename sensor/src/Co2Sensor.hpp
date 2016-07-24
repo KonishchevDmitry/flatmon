@@ -20,45 +20,60 @@ class Co2Sensor: public Util::Task {
     public:
         enum class Comfort: uint8_t;
 
-    // FIXME: Consider to use PWM output for sensor reading to free up UART ports
-    #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
-        typedef AltSoftSerial SensorSerial;
-    #else
-        typedef HardwareSerial SensorSerial;
-    #endif
+    public:
+        Co2Sensor(Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer);
+
+    public:
+        bool getConcentration(uint16_t* concentration) const;
+
+    protected:
+        void onConcentration(uint16_t concentration);
+        void onError();
+
+    private:
+        void onComfort(Comfort comfort);
+
+    private:
+        Comfort comfort_;
+        uint16_t concentration_;
+
+        LedGroup* ledGroup_;
+        LedProgressTask ledProgress_;
+        Buzzer* buzzer_;
+};
+
+// FIXME: Consider to use PWM output for sensor reading to free up UART ports
+class Co2UartSensor: public Co2Sensor {
+    public:
+        #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
+            typedef AltSoftSerial SensorSerial;
+        #else
+            typedef HardwareSerial SensorSerial;
+        #endif
 
     private:
         enum class State: uint8_t;
         static constexpr int SERIAL_SPEED = 9600;
 
     public:
-        Co2Sensor(SensorSerial* sensorSerial, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer);
+        Co2UartSensor(SensorSerial* sensorSerial, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer);
 
     public:
-        bool getConcentration(uint16_t* concentration) const;
         virtual void execute();
 
     private:
         void onReadConcentration();
         void onReadingConcentration();
         void onCommunicationError();
-        void onComfort(Comfort comfort);
 
     private:
         SensorSerial* sensorSerial_;
-
         State state_;
-        Comfort comfort_;
-        uint16_t concentration_;
 
         byte response_[9];
         uint8_t receivedBytes_;
         TimeMillis requestStartTime_;
         TimeMillis requestTimeout_;
-
-        LedGroup* ledGroup_;
-        LedProgressTask ledProgress_;
-        Buzzer* buzzer_;
 };
 
 #endif

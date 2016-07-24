@@ -8,8 +8,6 @@
 using Util::Logging::log;
 namespace Constants = Util::Constants;
 
-enum class Co2Sensor::State: uint8_t {read, reading};
-
 enum class Co2Sensor::Comfort: uint8_t {unknown, normal, warning, high, critical};
 static const char* COMFORT_NAMES[] = {"unknown", "normal", "warning", "high", "critical"};
 typedef Co2Sensor::Comfort Comfort;
@@ -48,10 +46,8 @@ namespace {
     }
 }
 
-Co2Sensor::Co2Sensor(SensorSerial* sensorSerial, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer)
-: sensorSerial_(sensorSerial), state_(State::read), comfort_(Comfort::unknown),
-  ledGroup_(ledGroup), ledProgress_(ledGroup), buzzer_(buzzer) {
-    sensorSerial_->begin(this->SERIAL_SPEED);
+Co2Sensor::Co2Sensor(Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer)
+: comfort_(Comfort::unknown), ledGroup_(ledGroup), ledProgress_(ledGroup), buzzer_(buzzer) {
     scheduler->addTask(&ledProgress_);
     scheduler->addTask(this);
     this->scheduleAfter(PREHEAT_TIME);
@@ -65,7 +61,42 @@ bool Co2Sensor::getConcentration(uint16_t *concentration) const {
     return true;
 }
 
-void Co2Sensor::execute() {
+void Co2Sensor::onConcentration(uint16_t concentration) {
+    concentration_ = concentration;
+
+    Comfort comfort = getComfort(concentration_);
+    log(F("CO2: "), concentration_, F(" ppm ("), COMFORT_NAMES[int(comfort)], F(")."));
+    this->onComfort(comfort);
+}
+
+void Co2Sensor::onError() {
+    this->onComfort(Comfort::unknown);
+}
+
+void Co2Sensor::onComfort(Comfort comfort) {
+    if(comfort == comfort_)
+        return;
+
+    if(comfort == Comfort::unknown)
+        ledProgress_.resume();
+    else if(comfort_ == Comfort::unknown)
+        ledProgress_.pause();
+    else
+        buzzer_->notify();
+
+    comfort_ = comfort;
+    ledGroup_->setLed(int(comfort));
+}
+
+
+enum class Co2UartSensor::State: uint8_t {read, reading};
+
+Co2UartSensor::Co2UartSensor(SensorSerial* sensorSerial, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer)
+: Co2Sensor(scheduler, ledGroup, buzzer), sensorSerial_(sensorSerial), state_(State::read) {
+    sensorSerial_->begin(this->SERIAL_SPEED);
+}
+
+void Co2UartSensor::execute() {
     switch(state_) {
         case State::read:
             this->onReadConcentration();
@@ -79,7 +110,8 @@ void Co2Sensor::execute() {
     }
 }
 
-void Co2Sensor::onReadConcentration() {
+
+void Co2UartSensor::onReadConcentration() {
     #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
         sensorSerial_->flushInput();
     #else
@@ -104,7 +136,7 @@ void Co2Sensor::onReadConcentration() {
     this->scheduleAfter(minRequestTime);
 }
 
-void Co2Sensor::onReadingConcentration() {
+void Co2UartSensor::onReadingConcentration() {
     const int responseSize = sizeof response_;
 
     while(receivedBytes_ < responseSize) {
@@ -134,11 +166,7 @@ void Co2Sensor::onReadingConcentration() {
         return this->onCommunicationError();
     }
 
-    concentration_ = uint16_t(response_[2]) << 8 | response_[3];
-
-    Comfort comfort = getComfort(concentration_);
-    log(F("CO2: "), concentration_, F(" ppm ("), COMFORT_NAMES[int(comfort)], F(")."));
-    this->onComfort(comfort);
+    this->onConcentration(uint16_t(response_[2]) << 8 | response_[3]);
 
     #if CONFIG_ENABLE_CO2_SENSOR_PWM_EXPERIMENT
         log(">>> ", CO2_SENSOR_PWM_VALUE_STATUS, " ", CO2_SENSOR_PWM_DURATION, " ", CO2_SENSOR_PWM_VALUE);
@@ -148,23 +176,8 @@ void Co2Sensor::onReadingConcentration() {
     this->scheduleAfter(POLLING_PERIOD);
 }
 
-void Co2Sensor::onCommunicationError() {
-    this->onComfort(Comfort::unknown);
+void Co2UartSensor::onCommunicationError() {
+    this->onError();
     this->state_ = State::read;
     this->scheduleAfter(POLLING_PERIOD);
-}
-
-void Co2Sensor::onComfort(Comfort comfort) {
-    if(comfort == comfort_)
-        return;
-
-    if(comfort == Comfort::unknown)
-        ledProgress_.resume();
-    else if(comfort_ == Comfort::unknown)
-        ledProgress_.pause();
-    else
-        buzzer_->notify();
-
-    comfort_ = comfort;
-    ledGroup_->setLed(int(comfort));
 }
