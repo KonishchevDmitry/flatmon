@@ -14,6 +14,12 @@ enum class Co2Sensor::Comfort: uint8_t {unknown, normal, warning, high, critical
 static const char* COMFORT_NAMES[] = {"unknown", "normal", "warning", "high", "critical"};
 typedef Co2Sensor::Comfort Comfort;
 
+#if CONFIG_ENABLE_CO2_SENSOR_PWM_EXPERIMENT
+    extern volatile int CO2_SENSOR_PWM_VALUE;
+    extern volatile int CO2_SENSOR_PWM_VALUE_STATUS;
+    extern volatile TimeMicros CO2_SENSOR_PWM_DURATION;
+#endif
+
 namespace {
     // It looks like sensor measures CO2 concentration each ~ 6 seconds.
     // It shouldn't be polled more often then once in 10 seconds because in that case it returns strange results.
@@ -45,7 +51,7 @@ namespace {
 Co2Sensor::Co2Sensor(SensorSerial* sensorSerial, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer)
 : sensorSerial_(sensorSerial), state_(State::read), comfort_(Comfort::unknown),
   ledGroup_(ledGroup), ledProgress_(ledGroup), buzzer_(buzzer) {
-    sensorSerial_->begin(9600);
+    sensorSerial_->begin(this->SERIAL_SPEED);
     scheduler->addTask(&ledProgress_);
     scheduler->addTask(this);
     this->scheduleAfter(PREHEAT_TIME);
@@ -87,8 +93,15 @@ void Co2Sensor::onReadConcentration() {
     size_t sentBytes = sensorSerial_->write(getGasConcentrationCommand, sizeof getGasConcentrationCommand);
     UTIL_ASSERT(sentBytes == sizeof getGasConcentrationCommand);
 
-    log(F("CO2 read start time: "), millis()); // FIXME: drop
+    this->requestStartTime_ = millis();
     this->state_ = State::reading;
+
+    constexpr size_t dataSize = sizeof getGasConcentrationCommand + sizeof response_;
+    constexpr float dataSpeed = float(this->SERIAL_SPEED) / 8 / Constants::SECOND_MILLIS;
+    constexpr TimeMillis minRequestTime = dataSize / dataSpeed;
+
+    this->requestTimeout_ = 2 * minRequestTime;
+    this->scheduleAfter(minRequestTime);
 }
 
 void Co2Sensor::onReadingConcentration() {
@@ -103,12 +116,12 @@ void Co2Sensor::onReadingConcentration() {
     }
 
     if(receivedBytes_ < responseSize) {
-        // FIXME: find out right timeout
-        if(this->isTimedOut(5000)) {
+        if(millis() - this->requestStartTime_ >= this->requestTimeout_) {
             log(F("CO2 sensor has timed out."));
-            this->onCommunicationError();
+            return this->onCommunicationError();
         }
-        return;
+
+        return this->scheduleAfter(1);
     }
 
     byte checksum = 0;
@@ -121,12 +134,15 @@ void Co2Sensor::onReadingConcentration() {
         return this->onCommunicationError();
     }
 
-    log(F("CO2 read end time: "), millis()); // FIXME: drop
     concentration_ = uint16_t(response_[2]) << 8 | response_[3];
 
     Comfort comfort = getComfort(concentration_);
     log(F("CO2: "), concentration_, F(" ppm ("), COMFORT_NAMES[int(comfort)], F(")."));
     this->onComfort(comfort);
+
+    #if CONFIG_ENABLE_CO2_SENSOR_PWM_EXPERIMENT
+        log(">>> ", CO2_SENSOR_PWM_VALUE_STATUS, " ", CO2_SENSOR_PWM_DURATION, " ", CO2_SENSOR_PWM_VALUE);
+    #endif
 
     this->state_ = State::read;
     this->scheduleAfter(POLLING_PERIOD);

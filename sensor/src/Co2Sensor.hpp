@@ -29,6 +29,7 @@ class Co2Sensor: public Util::Task {
 
     private:
         enum class State: uint8_t;
+        static constexpr int SERIAL_SPEED = 9600;
 
     public:
         Co2Sensor(SensorSerial* sensorSerial, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer);
@@ -52,6 +53,8 @@ class Co2Sensor: public Util::Task {
 
         byte response_[9];
         uint8_t receivedBytes_;
+        TimeMillis requestStartTime_;
+        TimeMillis requestTimeout_;
 
         LedGroup* ledGroup_;
         LedProgressTask ledProgress_;

@@ -51,13 +51,65 @@ const int DHT_22_SENSOR_PIN = 12;
 
 const int SHIFT_REGISTER_DATA_PIN = 10; // SER
 const int SHIFT_REGISTER_CLOCK_PIN = 3; // SRCLK
-const int SHIFT_REGISTER_LATCH_PIN = 2; // RCLK
+const int SHIFT_REGISTER_LATCH_PIN = 4; // RCLK
 
 const int LIGHT_SENSOR_PIN = A0;
 const uint8_t LED_BRIGHTNESS_CONTROLLING_PINS[] = {6};
 
 // Attention: Use of tone() function interferes with PWM output on pins 3 and 11 (on boards other than the Mega).
 const int BUZZER_PIN = 11;
+
+// FIXME
+#define CONFIG_ENABLE_CO2_SENSOR_PWM_EXPERIMENT 1
+
+#if CONFIG_ENABLE_CO2_SENSOR_PWM_EXPERIMENT
+    const int CO2_SENSOR_PWM_PIN = 2; // FIXME
+
+    enum class Co2SensorPwmState: uint8_t {waiting_low_level, waiting_for_data, reading_data};
+    volatile int CO2_SENSOR_PWM_VALUE;
+    volatile int CO2_SENSOR_PWM_VALUE_STATUS = 0;
+    volatile TimeMicros CO2_SENSOR_PWM_DURATION = 0;
+
+    static Co2SensorPwmState state = Co2SensorPwmState::waiting_low_level;
+    static TimeMicros dataStartTime = 0;
+    void co2SensorPwmLevelChangeHandler() {
+
+        switch(state) {
+            case Co2SensorPwmState::waiting_low_level:
+                if(!digitalRead(CO2_SENSOR_PWM_PIN))
+                    state = Co2SensorPwmState::waiting_for_data;
+                break;
+
+            case Co2SensorPwmState::waiting_for_data:
+                if(digitalRead(CO2_SENSOR_PWM_PIN)) {
+                    dataStartTime = micros();
+                    state = Co2SensorPwmState::reading_data;
+                }
+                break;
+
+            case Co2SensorPwmState::reading_data:
+                if(!digitalRead(CO2_SENSOR_PWM_PIN)) {
+                    CO2_SENSOR_PWM_DURATION = micros() - dataStartTime;
+
+                    if(CO2_SENSOR_PWM_DURATION < 2L * 1000)
+                        CO2_SENSOR_PWM_VALUE_STATUS = 2;
+                    else if(CO2_SENSOR_PWM_DURATION > 1100L * 1000)
+                        CO2_SENSOR_PWM_VALUE_STATUS = 3;
+                    else {
+                        CO2_SENSOR_PWM_VALUE_STATUS = 1;
+                        CO2_SENSOR_PWM_VALUE = double(CO2_SENSOR_PWM_DURATION - 2000) / 1000 / 1000 * 5000;
+                    }
+
+                    state = Co2SensorPwmState::waiting_for_data;
+                }
+                break;
+
+            default:
+                UTIL_LOGICAL_ERROR();
+                break;
+        }
+    }
+#endif
 
 void setup() {
     Util::Logging::init();
@@ -90,11 +142,33 @@ void setup() {
     #endif
 
     #if CONFIG_ENABLE_TRANSMITTER
-        Transmitter transmitter(&TRANSMITTER, &scheduler, &dht22,
+        Transmitter transmitter(&TRANSMITTER, &scheduler, &dht22
         #if CONFIG_ENABLE_CO2_SENSOR
-            &co2Sensor
+            , &co2Sensor
         #endif
         );
+    #endif
+
+    #if CONFIG_ENABLE_CO2_SENSOR_PWM_EXPERIMENT
+        pinMode(CO2_SENSOR_PWM_PIN, INPUT);
+
+        #if 1
+            attachInterrupt(digitalPinToInterrupt(CO2_SENSOR_PWM_PIN), co2SensorPwmLevelChangeHandler, CHANGE);
+        #else
+            bool value = digitalRead(CO2_SENSOR_PWM_PIN);
+            TimeMicros valueTime = micros();
+
+            while(true) {
+                while(digitalRead(CO2_SENSOR_PWM_PIN) == value)
+                    ;
+
+                TimeMicros duration = micros() - valueTime;
+                valueTime = micros();
+
+                log(">>> ", value, " ", duration);
+                value = !value;
+            }
+        #endif
     #endif
 
     size_t freeMemorySize = getStackFreeMemorySize();
