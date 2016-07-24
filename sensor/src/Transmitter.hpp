@@ -12,7 +12,7 @@
 class Transmitter: public Util::Task {
     public:
         Transmitter(RH_ASK* transmitter, Util::TaskScheduler* scheduler,
-                    const Dht22* dht22, const Co2Sensor* co2Sensor = nullptr);
+                    const Dht22* dht22, const Co2Sensor* co2Sensor);
 
     public:
         virtual void execute();

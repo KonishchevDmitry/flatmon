@@ -30,8 +30,7 @@ void Transmitter::execute() {
     dht22_->getTemperature(&temperature);
 
     uint16_t co2Concentration = SensorMessage::UNKNOWN_CO2_CONCENTRATION;
-    if(co2Sensor_)
-        co2Sensor_->getConcentration(&co2Concentration);
+    co2Sensor_->getConcentration(&co2Concentration);
 
     SensorMessage message = {
         sensorId: Config::SENSOR_ID,

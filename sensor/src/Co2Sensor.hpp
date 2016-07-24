@@ -19,21 +19,24 @@
 class Co2Sensor: public Util::Task {
     public:
         enum class Comfort: uint8_t;
+        typedef uint16_t Concentration;
 
     public:
         Co2Sensor(Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer);
 
     public:
-        bool getConcentration(uint16_t* concentration) const;
+        bool getConcentration(Concentration* concentration) const;
 
     protected:
-        void onConcentration(uint16_t concentration);
+        void onConcentration(Concentration concentration);
         void onError();
 
     private:
         void onComfort(Comfort comfort);
 
     private:
+        static const char* COMFORT_NAMES_[];
+
         Comfort comfort_;
         uint16_t concentration_;
 
@@ -42,7 +45,35 @@ class Co2Sensor: public Util::Task {
         Buzzer* buzzer_;
 };
 
-// FIXME: Consider to use PWM output for sensor reading to free up UART ports
+class Co2PwmSensor: public Co2Sensor {
+    private:
+        enum class State: uint8_t {initializing, high_level, low_level};
+        enum class Status: uint8_t;
+
+    public:
+        Co2PwmSensor(uint8_t pwmPin, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer);
+
+    public:
+        virtual void execute();
+
+    private:
+        static void init(uint8_t pwmPin);
+        static void onPwmValueChanged();
+        static void acquireCurrentStatus(Status* status, Concentration* concentration);
+
+    private:
+        static const char* STATUS_NAMES_[];
+
+        static uint16_t PWM_PIN_;
+
+        static State STATE_;
+        static TimeMicros CYCLE_START_TIME_;
+        static TimeMicros LOW_LEVEL_START_TIME_;
+
+        static volatile Status STATUS_;
+        static volatile Concentration CONCENTRATION_;
+};
+
 class Co2UartSensor: public Co2Sensor {
     public:
         #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL

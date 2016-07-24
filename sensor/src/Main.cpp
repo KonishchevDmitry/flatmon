@@ -28,6 +28,9 @@ using Util::Logging::log;
     RH_ASK TRANSMITTER(TRANSMITTER_SPEED, TRANSMITTER_RX_PIN, TRANSMITTER_TX_PIN, TRANSMITTER_PTT_PIN);
 #endif
 
+// MH-Z19 connection notes:
+// Vin - 5V
+// RX/TX/PWM should be connected to Arduino pins through 5V -> 3.3V logic level shifter
 #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
     // AltSoftSerial always uses these pins and breaks PWM on the following pins:
     //
@@ -37,13 +40,12 @@ using Util::Logging::log;
     // Arduino Mega             46  48        44, 45
     #include <AltSoftSerial.h>
     AltSoftSerial SOFTWARE_SERIAL;
-#endif
 
-// MH-Z19 connection notes:
-// Vin - 5V
-// RX/TX - should be connected to Arduino pins through 5V -> 3.3V logic level shifter
-const int CO2_SENSOR_RX_PIN = 9;
-const int CO2_SENSOR_TX_PIN = 8;
+    const int CO2_SENSOR_RX_PIN = 9;
+    const int CO2_SENSOR_TX_PIN = 8;
+#else
+    const int CO2_SENSOR_PWM_PIN = 2;
+#endif
 
 // DHT22 connection notes:
 // One 100nF capacitor should be added between VDD and GND for wave filtering.
@@ -58,58 +60,6 @@ const uint8_t LED_BRIGHTNESS_CONTROLLING_PINS[] = {6};
 
 // Attention: Use of tone() function interferes with PWM output on pins 3 and 11 (on boards other than the Mega).
 const int BUZZER_PIN = 11;
-
-// FIXME
-#define CONFIG_ENABLE_CO2_SENSOR_PWM_EXPERIMENT 1
-
-#if CONFIG_ENABLE_CO2_SENSOR_PWM_EXPERIMENT
-    const int CO2_SENSOR_PWM_PIN = 2; // FIXME
-
-    enum class Co2SensorPwmState: uint8_t {waiting_low_level, waiting_for_data, reading_data};
-    volatile int CO2_SENSOR_PWM_VALUE;
-    volatile int CO2_SENSOR_PWM_VALUE_STATUS = 0;
-    volatile TimeMicros CO2_SENSOR_PWM_DURATION = 0;
-
-    static Co2SensorPwmState state = Co2SensorPwmState::waiting_low_level;
-    static TimeMicros dataStartTime = 0;
-    void co2SensorPwmLevelChangeHandler() {
-
-        switch(state) {
-            case Co2SensorPwmState::waiting_low_level:
-                if(!digitalRead(CO2_SENSOR_PWM_PIN))
-                    state = Co2SensorPwmState::waiting_for_data;
-                break;
-
-            case Co2SensorPwmState::waiting_for_data:
-                if(digitalRead(CO2_SENSOR_PWM_PIN)) {
-                    dataStartTime = micros();
-                    state = Co2SensorPwmState::reading_data;
-                }
-                break;
-
-            case Co2SensorPwmState::reading_data:
-                if(!digitalRead(CO2_SENSOR_PWM_PIN)) {
-                    CO2_SENSOR_PWM_DURATION = micros() - dataStartTime;
-
-                    if(CO2_SENSOR_PWM_DURATION < 2L * 1000)
-                        CO2_SENSOR_PWM_VALUE_STATUS = 2;
-                    else if(CO2_SENSOR_PWM_DURATION > 1100L * 1000)
-                        CO2_SENSOR_PWM_VALUE_STATUS = 3;
-                    else {
-                        CO2_SENSOR_PWM_VALUE_STATUS = 1;
-                        CO2_SENSOR_PWM_VALUE = double(CO2_SENSOR_PWM_DURATION - 2000) / 1000 / 1000 * 5000;
-                    }
-
-                    state = Co2SensorPwmState::waiting_for_data;
-                }
-                break;
-
-            default:
-                UTIL_LOGICAL_ERROR();
-                break;
-        }
-    }
-#endif
 
 void setup() {
     Util::Logging::init();
@@ -129,46 +79,16 @@ void setup() {
     LedGroup humidityLeds(&leds, 4, 4);
     Dht22 dht22(DHT_22_SENSOR_PIN, &scheduler, &temperatureLeds, &humidityLeds, &buzzer);
 
-    #if CONFIG_ENABLE_CO2_SENSOR
-        LedGroup co2Leds(&leds, 8, 4);
+    LedGroup co2Leds(&leds, 8, 4);
 
-        #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
-            Co2UartSensor::SensorSerial* co2SensorSerial = &SOFTWARE_SERIAL;
-        #else
-            Co2UartSensor::SensorSerial* co2SensorSerial = &Serial;
-        #endif
-
-        Co2UartSensor co2Sensor(co2SensorSerial, &scheduler, &co2Leds, &buzzer);
+    #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
+        Co2UartSensor co2Sensor(&SOFTWARE_SERIAL, &scheduler, &co2Leds, &buzzer);
+    #else
+        Co2PwmSensor co2Sensor(CO2_SENSOR_PWM_PIN, &scheduler, &co2Leds, &buzzer);
     #endif
 
     #if CONFIG_ENABLE_TRANSMITTER
-        Transmitter transmitter(&TRANSMITTER, &scheduler, &dht22
-        #if CONFIG_ENABLE_CO2_SENSOR
-            , &co2Sensor
-        #endif
-        );
-    #endif
-
-    #if CONFIG_ENABLE_CO2_SENSOR_PWM_EXPERIMENT
-        pinMode(CO2_SENSOR_PWM_PIN, INPUT);
-
-        #if 1
-            attachInterrupt(digitalPinToInterrupt(CO2_SENSOR_PWM_PIN), co2SensorPwmLevelChangeHandler, CHANGE);
-        #else
-            bool value = digitalRead(CO2_SENSOR_PWM_PIN);
-            TimeMicros valueTime = micros();
-
-            while(true) {
-                while(digitalRead(CO2_SENSOR_PWM_PIN) == value)
-                    ;
-
-                TimeMicros duration = micros() - valueTime;
-                valueTime = micros();
-
-                log(">>> ", value, " ", duration);
-                value = !value;
-            }
-        #endif
+        Transmitter transmitter(&TRANSMITTER, &scheduler, &dht22, &co2Sensor);
     #endif
 
     size_t freeMemorySize = getStackFreeMemorySize();
