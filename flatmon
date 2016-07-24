@@ -191,6 +191,7 @@ class Monitor:
         if co2_concentration == 0xFFFF:
             co2_concentration = None
 
+        log.info("Temperature: %s, humidity: %s, CO2 concentration: %s.", temperature, humidity, co2_concentration)
         self.__thingspeak.on_sensor_metrics(sensor_id, temperature, humidity, co2_concentration)
 
     @staticmethod
