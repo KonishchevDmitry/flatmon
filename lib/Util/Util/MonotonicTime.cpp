@@ -26,6 +26,8 @@ MonotonicTime MonotonicTime::now() {
     if(curTime.time < lastTime.time)
         curTime.epoch += 1;
 
+    lastTime = curTime;
+
     return curTime;
 }
 
