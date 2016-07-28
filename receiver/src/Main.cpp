@@ -77,6 +77,7 @@ void setup() {
 
         SensorMessage* message = reinterpret_cast<SensorMessage*>(sensorMessageBuf);
         log(F("Got a message from #"), message->sensorId, F(" sensor."));
+        message->co2Concentration = htons(message->co2Concentration);
         sendMessageToServer(message, sizeof(SensorMessage));
     }
 }
