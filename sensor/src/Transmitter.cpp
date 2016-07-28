@@ -21,7 +21,7 @@ Transmitter::Transmitter(RH_ASK* transmitter, Util::TaskScheduler* scheduler,
 }
 
 void Transmitter::execute() {
-    log("Sending sensor data...");
+    log(F("Sending sensor data..."));
 
     uint8_t humidity = SensorMessage::UNKNOWN_HUMIDITY;
     dht22_->getHumidity(&humidity);

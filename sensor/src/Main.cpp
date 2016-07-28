@@ -63,7 +63,6 @@ const int BUZZER_PIN = 11;
 
 void setup() {
     Util::Logging::init();
-    // FIXME: check F() macro issues: deduplication, release mode.
     log(F("Initializing..."));
 
     Util::TaskScheduler scheduler;
