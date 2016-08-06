@@ -8,6 +8,9 @@
 #include "Config.hpp"
 #include "Indication.hpp"
 
+// FIXME
+#define CO2_PWM_SENSOR_ENABLE_PROFILING 0
+
 #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
     #include <AltSoftSerial.h>
 #endif
@@ -54,6 +57,9 @@ class Co2PwmSensor: public Co2Sensor {
         Co2PwmSensor(uint8_t pwmPin, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer);
 
     public:
+    #if CO2_PWM_SENSOR_ENABLE_PROFILING
+        static void profile(uint8_t pwmPin);
+    #endif
         virtual void execute();
 
     private:

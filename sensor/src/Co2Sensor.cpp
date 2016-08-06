@@ -86,6 +86,15 @@ void Co2Sensor::onComfort(Comfort comfort) {
 }
 
 
+#if CO2_PWM_SENSOR_ENABLE_PROFILING
+    struct Co2PwmSensorProfilingData {
+        TimeMicros highLevelDuration;
+        TimeMicros lowLevelDuration;
+    };
+
+    Co2PwmSensorProfilingData CO2_PWM_SENSOR_PROFILING_DATA;
+#endif
+
 enum class Co2PwmSensor::Status: uint8_t {no_data, ok, bounce_error, timing_error, logical_error};
 const char* Co2PwmSensor::STATUS_NAMES_[] = {"no-data", "ok", "bounce-error", "timing-error", "logical-error"};
 
@@ -93,11 +102,11 @@ constexpr uint16_t PWM_PIN_UNSET = 0xFFFF;
 uint16_t Co2PwmSensor::PWM_PIN_ = PWM_PIN_UNSET;
 
 Co2PwmSensor::State Co2PwmSensor::STATE_ = Co2PwmSensor::State::initializing;
-volatile Co2PwmSensor::Status Co2PwmSensor::STATUS_ = Co2PwmSensor::Status::no_data;
-volatile Concentration Co2PwmSensor::CONCENTRATION_;
-
 TimeMicros Co2PwmSensor::CYCLE_START_TIME_;
 TimeMicros Co2PwmSensor::LOW_LEVEL_START_TIME_;
+
+volatile Co2PwmSensor::Status Co2PwmSensor::STATUS_ = Co2PwmSensor::Status::no_data;
+volatile Concentration Co2PwmSensor::CONCENTRATION_;
 
 void Co2PwmSensor::init(uint8_t pwmPin) {
     if(PWM_PIN_ != PWM_PIN_UNSET) {
@@ -148,6 +157,13 @@ void Co2PwmSensor::onPwmValueChanged() {
             constexpr TimeMicros cycleDuration = highLevelMarkDuration + dataDuration + lowLevelMarkDuration;
             constexpr TimeMicros minPrecision = dataDuration / maxPpm / 2;
 
+            #if CO2_PWM_SENSOR_ENABLE_PROFILING
+                CO2_PWM_SENSOR_PROFILING_DATA = Co2PwmSensorProfilingData{
+                    highLevelDuration: curHighLevelDuration,
+                    lowLevelDuration: curLowLevelDuration,
+                };
+            #endif
+
             if(
                 curCycleDuration < cycleDuration - minPrecision ||
                 curCycleDuration > cycleDuration + minPrecision ||
@@ -182,12 +198,45 @@ void Co2PwmSensor::onPwmValueChanged() {
 }
 
 void Co2PwmSensor::acquireCurrentStatus(Status* status, Concentration* concentration) {
+#if CO2_PWM_SENSOR_ENABLE_PROFILING
+    Co2PwmSensorProfilingData profilingData;
+#endif
+
     noInterrupts();
     *status = STATUS_;
     *concentration = CONCENTRATION_;
+#if CO2_PWM_SENSOR_ENABLE_PROFILING
+    profilingData = CO2_PWM_SENSOR_PROFILING_DATA;
+#endif
     STATUS_ = Status::no_data;
     interrupts();
+
+#if CO2_PWM_SENSOR_ENABLE_PROFILING
+    const char* statusName = STATUS_NAMES_[int(*status)];
+
+    if(*status == Status::ok || *status == Status::timing_error) {
+        log(F("CO2 PWM sensor profiling: "), statusName,
+            F(". Logic level durations: "), profilingData.highLevelDuration, F(" + "), profilingData.lowLevelDuration,
+            F(" = "), profilingData.highLevelDuration + profilingData.lowLevelDuration, F("."));
+    } else {
+        log(F("CO2 PWM sensor profiling: "), statusName, F("."));
+    }
+#endif
 }
+
+#if CO2_PWM_SENSOR_ENABLE_PROFILING
+void Co2PwmSensor::profile(uint8_t pwmPin) {
+    Co2PwmSensor::init(pwmPin);
+
+    Status status;
+    Concentration concentration;
+
+    while(true) {
+        acquireCurrentStatus(&status, &concentration);
+        delay(2000);
+    }
+}
+#endif
 
 Co2PwmSensor::Co2PwmSensor(uint8_t pwmPin, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer)
 : Co2Sensor(scheduler, ledGroup, buzzer) {
