@@ -11,6 +11,7 @@
 #include "Co2Sensor.hpp"
 #include "Config.hpp"
 #include "Dht22.hpp"
+#include "Display.hpp"
 #include "Indication.hpp"
 #include "TemperatureSensor.hpp"
 
@@ -55,6 +56,21 @@ const int SHIFT_REGISTER_DATA_PIN = 10; // SER
 const int SHIFT_REGISTER_CLOCK_PIN = 3; // SRCLK
 const int SHIFT_REGISTER_LATCH_PIN = 4; // RCLK
 
+// LCD connection:
+// VSS - GND
+// VDD - 5V
+// VO (Contrast) - using voltage devider: 5V - 10K - V0 - 1K - GND
+const int LCD_RS_PIN = A1;
+// RW - GND
+const int LCD_E_PIN = A2;
+// D0-D3 - not connected
+const int LCD_D4_PIN = A3;
+const int LCD_D5_PIN = 8;
+const int LCD_D6_PIN = 7;
+const int LCD_D7_PIN = 5;
+// A (LED+ has internal resistor) - 5V
+// K (LED-) - GND
+
 const int LIGHT_SENSOR_PIN = A0;
 const uint8_t LED_BRIGHTNESS_CONTROLLING_PINS[] = {6};
 
@@ -69,6 +85,7 @@ void setup() {
 
     Buzzer buzzer(&scheduler, BUZZER_PIN);
     ShiftRegisterLeds leds(SHIFT_REGISTER_DATA_PIN, SHIFT_REGISTER_CLOCK_PIN, SHIFT_REGISTER_LATCH_PIN);
+    Display display(LCD_RS_PIN, LCD_E_PIN, LCD_D4_PIN, LCD_D5_PIN, LCD_D6_PIN, LCD_D7_PIN);
 
     const size_t ledsNum = sizeof LED_BRIGHTNESS_CONTROLLING_PINS / sizeof *LED_BRIGHTNESS_CONTROLLING_PINS;
     LedBrightnessRegulator<ledsNum> ledBrightnessRegulator(
