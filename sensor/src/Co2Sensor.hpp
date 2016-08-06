@@ -8,7 +8,6 @@
 #include "Config.hpp"
 #include "Indication.hpp"
 
-// FIXME
 #define CO2_PWM_SENSOR_ENABLE_PROFILING 0
 
 #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
