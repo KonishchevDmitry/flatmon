@@ -70,6 +70,7 @@ const int LCD_D6_PIN = A5;
 const int LCD_D7_PIN = 10;
 // A (LED+ has internal resistor) - 5V
 // K (LED-) - GND
+Display LCD_DISPLAY(LCD_RS_PIN, LCD_E_PIN, LCD_D4_PIN, LCD_D5_PIN, LCD_D6_PIN, LCD_D7_PIN);
 
 const int LIGHT_SENSOR_PIN = A0;
 const uint8_t LED_BRIGHTNESS_CONTROLLING_PINS[] = {5};
@@ -77,9 +78,22 @@ const uint8_t LED_BRIGHTNESS_CONTROLLING_PINS[] = {5};
 // Attention: Use of tone() function interferes with PWM output on pins 3 and 11 (on boards other than the Mega).
 const int BUZZER_PIN = 11;
 
+void abortHandler(
+#if UTIL_VERBOSE_ASSERTS
+    const FlashChar* file, int line
+#endif
+) {
+    LCD_DISPLAY.showAssertionError(
+    #if UTIL_VERBOSE_ASSERTS
+        file, line
+    #endif
+    );
+}
+
 void setup() {
     Util::Logging::init();
     log(F("Initializing..."));
+    Util::Assertion::setAbortHandler(abortHandler);
 
     Util::TaskScheduler scheduler;
 
@@ -87,23 +101,20 @@ void setup() {
     // Buzzer buzzer(&scheduler, BUZZER_PIN);
 
     ShiftRegisterLeds leds(SHIFT_REGISTER_DATA_PIN, SHIFT_REGISTER_CLOCK_PIN, SHIFT_REGISTER_LATCH_PIN);
-    // FIXME: Display assertion error
-    Display display(LCD_RS_PIN, LCD_E_PIN, LCD_D4_PIN, LCD_D5_PIN, LCD_D6_PIN, LCD_D7_PIN);
-
     const size_t ledsNum = sizeof LED_BRIGHTNESS_CONTROLLING_PINS / sizeof *LED_BRIGHTNESS_CONTROLLING_PINS;
     LedBrightnessRegulator<ledsNum> ledBrightnessRegulator(
         LIGHT_SENSOR_PIN, LED_BRIGHTNESS_CONTROLLING_PINS, &scheduler);
 
     LedGroup temperatureLeds(&leds, 0, 4);
     LedGroup humidityLeds(&leds, 4, 4);
-    Dht22 dht22(DHT_22_SENSOR_PIN, &scheduler, &temperatureLeds, &humidityLeds, &display);
+    Dht22 dht22(DHT_22_SENSOR_PIN, &scheduler, &temperatureLeds, &humidityLeds, &LCD_DISPLAY);
 
     LedGroup co2Leds(&leds, 8, 4);
 
     #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
-        Co2UartSensor co2Sensor(&SOFTWARE_SERIAL, &scheduler, &co2Leds, &display);
+        Co2UartSensor co2Sensor(&SOFTWARE_SERIAL, &scheduler, &co2Leds, &LCD_DISPLAY);
     #else
-        Co2PwmSensor co2Sensor(CO2_SENSOR_PWM_PIN, &scheduler, &co2Leds, &display);
+        Co2PwmSensor co2Sensor(CO2_SENSOR_PWM_PIN, &scheduler, &co2Leds, &LCD_DISPLAY);
     #endif
 
     #if CONFIG_ENABLE_TRANSMITTER
