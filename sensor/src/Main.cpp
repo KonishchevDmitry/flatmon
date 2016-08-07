@@ -20,8 +20,8 @@ using Util::Logging::log;
 #if CONFIG_ENABLE_TRANSMITTER
     const int TRANSMITTER_SPEED = 1000;
     const int TRANSMITTER_TX_PIN = 9;
-    const int TRANSMITTER_RX_PIN = A4;
-    const int TRANSMITTER_PTT_PIN = A5;
+    const int TRANSMITTER_RX_PIN = 8;
+    const int TRANSMITTER_PTT_PIN = 7;
 
     // FIXME: Add unusable PWM notes (because of Timer1 usage)
     #include <RH_ASK.h>
@@ -52,9 +52,9 @@ using Util::Logging::log;
 // One 100nF capacitor should be added between VDD and GND for wave filtering.
 const int DHT_22_SENSOR_PIN = 12;
 
-const int SHIFT_REGISTER_DATA_PIN = 10; // SER
-const int SHIFT_REGISTER_CLOCK_PIN = 3; // SRCLK
-const int SHIFT_REGISTER_LATCH_PIN = 4; // RCLK
+const int SHIFT_REGISTER_DATA_PIN = 6; // SER
+const int SHIFT_REGISTER_CLOCK_PIN = 4; // SRCLK
+const int SHIFT_REGISTER_LATCH_PIN = 3; // RCLK
 
 // LCD connection:
 // VSS - GND
@@ -65,14 +65,14 @@ const int LCD_RS_PIN = A1;
 const int LCD_E_PIN = A2;
 // D0-D3 - not connected
 const int LCD_D4_PIN = A3;
-const int LCD_D5_PIN = 8;
-const int LCD_D6_PIN = 7;
-const int LCD_D7_PIN = 5;
+const int LCD_D5_PIN = A4;
+const int LCD_D6_PIN = A5;
+const int LCD_D7_PIN = 10;
 // A (LED+ has internal resistor) - 5V
 // K (LED-) - GND
 
 const int LIGHT_SENSOR_PIN = A0;
-const uint8_t LED_BRIGHTNESS_CONTROLLING_PINS[] = {6};
+const uint8_t LED_BRIGHTNESS_CONTROLLING_PINS[] = {5};
 
 // Attention: Use of tone() function interferes with PWM output on pins 3 and 11 (on boards other than the Mega).
 const int BUZZER_PIN = 11;
@@ -83,8 +83,11 @@ void setup() {
 
     Util::TaskScheduler scheduler;
 
-    Buzzer buzzer(&scheduler, BUZZER_PIN);
+    // FIXME: Do we need it?
+    // Buzzer buzzer(&scheduler, BUZZER_PIN);
+
     ShiftRegisterLeds leds(SHIFT_REGISTER_DATA_PIN, SHIFT_REGISTER_CLOCK_PIN, SHIFT_REGISTER_LATCH_PIN);
+    // FIXME: Display assertion error
     Display display(LCD_RS_PIN, LCD_E_PIN, LCD_D4_PIN, LCD_D5_PIN, LCD_D6_PIN, LCD_D7_PIN);
 
     const size_t ledsNum = sizeof LED_BRIGHTNESS_CONTROLLING_PINS / sizeof *LED_BRIGHTNESS_CONTROLLING_PINS;
@@ -93,14 +96,14 @@ void setup() {
 
     LedGroup temperatureLeds(&leds, 0, 4);
     LedGroup humidityLeds(&leds, 4, 4);
-    Dht22 dht22(DHT_22_SENSOR_PIN, &scheduler, &temperatureLeds, &humidityLeds, &buzzer);
+    Dht22 dht22(DHT_22_SENSOR_PIN, &scheduler, &temperatureLeds, &humidityLeds, &display);
 
     LedGroup co2Leds(&leds, 8, 4);
 
     #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
-        Co2UartSensor co2Sensor(&SOFTWARE_SERIAL, &scheduler, &co2Leds, &buzzer);
+        Co2UartSensor co2Sensor(&SOFTWARE_SERIAL, &scheduler, &co2Leds, &display);
     #else
-        Co2PwmSensor co2Sensor(CO2_SENSOR_PWM_PIN, &scheduler, &co2Leds, &buzzer);
+        Co2PwmSensor co2Sensor(CO2_SENSOR_PWM_PIN, &scheduler, &co2Leds, &display);
     #endif
 
     #if CONFIG_ENABLE_TRANSMITTER
