@@ -5,6 +5,7 @@
 #include <Util/TaskScheduler.hpp>
 
 #include "Buzzer.hpp"
+#include "Display.hpp"
 #include "Indication.hpp"
 
 class Dht22: public Util::Task {
@@ -17,7 +18,8 @@ class Dht22: public Util::Task {
 
     public:
         Dht22(uint8_t dataPin, Util::TaskScheduler* scheduler,
-              LedGroup* temperatureLedGroup, LedGroup* humidityLedGroup, Buzzer* buzzer);
+              LedGroup* temperatureLedGroup, LedGroup* humidityLedGroup,
+              Display* display=nullptr, Buzzer* buzzer=nullptr);
 
     public:
         bool getTemperature(int8_t* temperature) const;
@@ -51,6 +53,7 @@ class Dht22: public Util::Task {
         LedGroup* humidityLedGroup_;
         LedProgressTask humidityLedProgress_;
 
+        Display* display_;
         Buzzer* buzzer_;
 };
 

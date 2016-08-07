@@ -51,12 +51,11 @@ namespace {
 }
 
 Dht22::Dht22(uint8_t dataPin, Util::TaskScheduler* scheduler,
-             LedGroup* temperatureLedGroup, LedGroup* humidityLedGroup, Buzzer* buzzer)
+             LedGroup* temperatureLedGroup, LedGroup* humidityLedGroup, Display* display, Buzzer* buzzer)
 : dataPin_(dataPin), state_(State::start_reading), temperatureComfort_(TemperatureComfort::unknown),
   temperatureLedGroup_(temperatureLedGroup), temperatureLedProgress_(temperatureLedGroup),
   humidityComfort_(HumidityComfort::unknown), humidityLedGroup_(humidityLedGroup),
-  humidityLedProgress_(humidityLedGroup),
-  buzzer_(buzzer) {
+  humidityLedProgress_(humidityLedGroup), display_(display), buzzer_(buzzer) {
     this->stopReading();
 
     scheduler->addTask(&temperatureLedProgress_);
@@ -164,8 +163,6 @@ void Dht22::onReading() {
 
     humidity_ = lround(float(payload[0]) / 10);
     HumidityComfort humidityComfort = getHumidityComfort(humidity_);
-    log(F("Humidity: "), humidity_, F("% ("), HUMIDITY_COMFORT_NAMES[int(humidityComfort)], F(")."));
-    this->onHumidityComfort(humidityComfort);
 
     int16_t encodedTemperature = payload[1];
     uint16_t negativeTemperatureBit = 1 << 15;
@@ -176,7 +173,16 @@ void Dht22::onReading() {
 
     temperature_ = lround(float(encodedTemperature) / 10);
     TemperatureComfort temperatureComfort = getTemperatureComfort(temperature_);
+
+    log(F("Humidity: "), humidity_, F("% ("), HUMIDITY_COMFORT_NAMES[int(humidityComfort)], F(")."));
     log(F("Temperature: "), temperature_, F("C ("), TEMPERATURE_COMFORT_NAMES[int(temperatureComfort)], F(")."));
+
+    if(display_) {
+        display_->setHumidity(humidity_);
+        display_->setTemperature(temperature_);
+    }
+
+    this->onHumidityComfort(humidityComfort);
     this->onTemperatureComfort(temperatureComfort);
 
     this->stopReading();
@@ -186,6 +192,11 @@ void Dht22::onReading() {
 
 void Dht22::onError() {
     this->stopReading();
+
+    if(display_) {
+        display_->resetHumidity();
+        display_->resetTemperature();
+    }
 
     this->onHumidityComfort(HumidityComfort::unknown);
     this->onTemperatureComfort(TemperatureComfort::unknown);
@@ -202,11 +213,14 @@ void Dht22::onTemperatureComfort(TemperatureComfort comfort) {
         temperatureLedProgress_.resume();
     else if(temperatureComfort_ == TemperatureComfort::unknown)
         temperatureLedProgress_.pause();
-    else
-        buzzer_->notify();
+    else {
+        if(buzzer_)
+            buzzer_->notify();
+    }
 
     temperatureComfort_ = comfort;
     temperatureLedGroup_->setLed(int(comfort));
+
 }
 
 void Dht22::onHumidityComfort(HumidityComfort comfort) {
@@ -217,8 +231,10 @@ void Dht22::onHumidityComfort(HumidityComfort comfort) {
         humidityLedProgress_.resume();
     else if(humidityComfort_ == HumidityComfort::unknown)
         humidityLedProgress_.pause();
-    else
-        buzzer_->notify();
+    else {
+        if(buzzer_)
+            buzzer_->notify();
+    }
 
     humidityComfort_ = comfort;
     humidityLedGroup_->setLed(int(comfort));
