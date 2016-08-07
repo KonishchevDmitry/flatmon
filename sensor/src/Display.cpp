@@ -97,6 +97,37 @@ void Display::resetCo2Concentration() {
     co2Concentration_ = NO_DATA_;
 }
 
+void Display::showAssertionError(
+#if UTIL_VERBOSE_ASSERTS
+    const FlashChar* file, int line
+#endif
+) {
+    lcd_.clear();
+    lcd_.print(F("Assertion error."));
+
+#if UTIL_VERBOSE_ASSERTS
+    if(LCD_ROWS < 2)
+        return;
+
+    lcd_.setCursor(0, 1);
+
+    size_t lineLen = snprintf(nullptr, 0, "%d", line);
+    if(lineLen >= LCD_COLS)
+        return;
+
+    const char* castedProgmemFile = reinterpret_cast<const char*>(file);
+
+    size_t fileLen = strlen_P(castedProgmemFile);
+    size_t allowedFileLen = LCD_COLS - 1 - lineLen;
+    if(fileLen > allowedFileLen)
+        castedProgmemFile += fileLen - allowedFileLen;
+
+    lcd_.print(reinterpret_cast<const FlashChar*>(castedProgmemFile));
+    lcd_.print(":");
+    lcd_.print(line);
+#endif
+}
+
 void Display::setText(uint8_t row, uint8_t col, const char* text) {
     lcd_.setCursor(col, row);
     lcd_.print(text);

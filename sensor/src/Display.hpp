@@ -22,6 +22,12 @@ class Display {
         void setCo2Concentration(uint16_t concentration);
         void resetCo2Concentration();
 
+        void showAssertionError(
+        #if UTIL_VERBOSE_ASSERTS
+            const FlashChar* file, int line
+        #endif
+        );
+
     private:
         void setText(uint8_t row, uint8_t col, const char* text);
 

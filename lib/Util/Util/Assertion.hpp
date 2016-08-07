@@ -20,8 +20,8 @@
 namespace Util { namespace Assertion {
 
 #if UTIL_VERBOSE_ASSERTS
-    typedef void (*AbortHandler)(const FlashString* file, int line);
-    void abort(const FlashString* file, int line, const FlashString* error=nullptr) __attribute__((__noreturn__));
+    typedef void (*AbortHandler)(const FlashChar* file, int line);
+    void abort(const FlashChar* file, int line, const FlashChar* error=nullptr) __attribute__((__noreturn__));
 #else
     typedef void (*AbortHandler)();
     void abort() __attribute__((__noreturn__));

@@ -13,7 +13,7 @@ namespace Util { namespace Assertion {
     }
 
 #if UTIL_VERBOSE_ASSERTS
-    void abort(const FlashString* file, int line, const FlashString* error) {
+    void abort(const FlashChar* file, int line, const FlashChar* error) {
 #else
     void abort() {
 #endif
