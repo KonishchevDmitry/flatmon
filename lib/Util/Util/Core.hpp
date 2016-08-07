@@ -17,6 +17,9 @@ typedef unsigned long TimeMillis;
 // Type which is used to store time in microseconds.
 typedef unsigned long TimeMicros;
 
+// A pointer returned by F() macro.
+typedef __FlashStringHelper FlashString;
+
 size_t getStackFreeMemorySize();
 
 #endif
