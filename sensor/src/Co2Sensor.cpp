@@ -43,8 +43,8 @@ namespace {
     }
 }
 
-Co2Sensor::Co2Sensor(Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer)
-: comfort_(Comfort::unknown), ledGroup_(ledGroup), ledProgress_(ledGroup), buzzer_(buzzer) {
+Co2Sensor::Co2Sensor(Util::TaskScheduler* scheduler, LedGroup* ledGroup, Display* display, Buzzer* buzzer)
+: comfort_(Comfort::unknown), ledGroup_(ledGroup), ledProgress_(ledGroup), display_(display), buzzer_(buzzer) {
     scheduler->addTask(&ledProgress_);
     scheduler->addTask(this);
     this->scheduleAfter(PREHEAT_TIME);
@@ -63,10 +63,17 @@ void Co2Sensor::onConcentration(Concentration concentration) {
 
     Comfort comfort = getComfort(concentration_);
     log(F("CO2: "), concentration_, F(" ppm ("), COMFORT_NAMES_[int(comfort)], F(")."));
+
+    if(display_)
+        display_->setCo2Concentration(concentration);
+
     this->onComfort(comfort);
 }
 
 void Co2Sensor::onError() {
+    if(display_)
+        display_->resetCo2Concentration();
+
     this->onComfort(Comfort::unknown);
 }
 
@@ -78,8 +85,10 @@ void Co2Sensor::onComfort(Comfort comfort) {
         ledProgress_.resume();
     else if(comfort_ == Comfort::unknown)
         ledProgress_.pause();
-    else
-        buzzer_->notify();
+    else {
+        if(buzzer_)
+            buzzer_->notify();
+    }
 
     comfort_ = comfort;
     ledGroup_->setLed(int(comfort));
@@ -238,8 +247,9 @@ void Co2PwmSensor::profile(uint8_t pwmPin) {
 }
 #endif
 
-Co2PwmSensor::Co2PwmSensor(uint8_t pwmPin, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer)
-: Co2Sensor(scheduler, ledGroup, buzzer) {
+Co2PwmSensor::Co2PwmSensor(uint8_t pwmPin, Util::TaskScheduler* scheduler, LedGroup* ledGroup,
+                           Display* display, Buzzer* buzzer)
+: Co2Sensor(scheduler, ledGroup, display, buzzer) {
     this->init(pwmPin);
 }
 
@@ -261,8 +271,9 @@ void Co2PwmSensor::execute() {
 
 enum class Co2UartSensor::State: uint8_t {read, reading};
 
-Co2UartSensor::Co2UartSensor(SensorSerial* sensorSerial, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer)
-: Co2Sensor(scheduler, ledGroup, buzzer), sensorSerial_(sensorSerial), state_(State::read) {
+Co2UartSensor::Co2UartSensor(SensorSerial* sensorSerial, Util::TaskScheduler* scheduler, LedGroup* ledGroup,
+                             Display* display, Buzzer* buzzer)
+: Co2Sensor(scheduler, ledGroup, display, buzzer), sensorSerial_(sensorSerial), state_(State::read) {
     sensorSerial_->begin(this->SERIAL_SPEED);
 }
 
