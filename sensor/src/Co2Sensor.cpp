@@ -62,7 +62,7 @@ void Co2Sensor::onConcentration(Concentration concentration) {
     concentration_ = concentration;
 
     Comfort comfort = getComfort(concentration_);
-    log(F("CO2: "), concentration_, F(" ppm ("), COMFORT_NAMES_[int(comfort)], F(")."));
+    log(F("CO2 ("), this->getName(), F("): "), concentration_, F(" ppm ("), COMFORT_NAMES_[int(comfort)], F(")."));
 
     if(display_)
         display_->setCo2Concentration(concentration);
@@ -160,10 +160,10 @@ void Co2PwmSensor::onPwmValueChanged() {
             TimeMicros curLowLevelDuration = curTime - LOW_LEVEL_START_TIME_;
 
             constexpr Concentration maxPpm = 5000;
-            constexpr TimeMicros highLevelMarkDuration = 2000;
-            constexpr TimeMicros lowLevelMarkDuration = 2000;
-            constexpr TimeMicros dataDuration = 1000000L;
-            constexpr TimeMicros cycleDuration = highLevelMarkDuration + dataDuration + lowLevelMarkDuration;
+            constexpr TimeMicros highLevelMarkDuration = lround(2000 * Config::CO2_PWM_SENSOR_TIME_SCALE_FACTOR);
+            constexpr TimeMicros lowLevelMarkDuration = lround(2000 * Config::CO2_PWM_SENSOR_TIME_SCALE_FACTOR);
+            constexpr TimeMicros dataDuration = lround(1000000L * Config::CO2_PWM_SENSOR_TIME_SCALE_FACTOR);
+            constexpr TimeMicros cycleDuration = lround(1004000L * Config::CO2_PWM_SENSOR_TIME_SCALE_FACTOR);
             constexpr TimeMicros minPrecision = dataDuration / maxPpm / 2;
 
             #if CO2_PWM_SENSOR_ENABLE_PROFILING
@@ -268,6 +268,10 @@ void Co2PwmSensor::execute() {
     this->scheduleAfter(POLLING_PERIOD);
 }
 
+const char* Co2PwmSensor::getName() {
+    return "PWM";
+}
+
 
 enum class Co2UartSensor::State: uint8_t {read, reading};
 
@@ -289,6 +293,10 @@ void Co2UartSensor::execute() {
             UTIL_ASSERT(false);
             break;
     }
+}
+
+const char* Co2UartSensor::getName() {
+    return "UART";
 }
 
 void Co2UartSensor::onReadConcentration() {
