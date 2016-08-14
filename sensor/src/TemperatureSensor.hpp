@@ -14,7 +14,7 @@ class TemperatureSensor: public Util::Task {
         enum class Comfort: uint8_t;
 
     public:
-        TemperatureSensor(uint8_t sensorPin, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer);
+        TemperatureSensor(uint8_t sensorPin, Util::TaskScheduler* scheduler, LedGroup* ledGroup);
 
     public:
         virtual void execute();

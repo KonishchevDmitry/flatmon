@@ -51,11 +51,11 @@ namespace {
 }
 
 Dht22::Dht22(uint8_t dataPin, Util::TaskScheduler* scheduler,
-             LedGroup* temperatureLedGroup, LedGroup* humidityLedGroup, Display* display, Buzzer* buzzer)
+             LedGroup* temperatureLedGroup, LedGroup* humidityLedGroup, Display* display)
 : dataPin_(dataPin), state_(State::start_reading), temperatureComfort_(TemperatureComfort::unknown),
   temperatureLedGroup_(temperatureLedGroup), temperatureLedProgress_(temperatureLedGroup),
   humidityComfort_(HumidityComfort::unknown), humidityLedGroup_(humidityLedGroup),
-  humidityLedProgress_(humidityLedGroup), display_(display), buzzer_(buzzer) {
+  humidityLedProgress_(humidityLedGroup), display_(display) {
     this->stopReading();
 
     scheduler->addTask(&temperatureLedProgress_);
@@ -213,10 +213,6 @@ void Dht22::onTemperatureComfort(TemperatureComfort comfort) {
         temperatureLedProgress_.resume();
     else if(temperatureComfort_ == TemperatureComfort::unknown)
         temperatureLedProgress_.pause();
-    else {
-        if(buzzer_)
-            buzzer_->notify();
-    }
 
     temperatureComfort_ = comfort;
     temperatureLedGroup_->setLed(int(comfort));
@@ -231,10 +227,6 @@ void Dht22::onHumidityComfort(HumidityComfort comfort) {
         humidityLedProgress_.resume();
     else if(humidityComfort_ == HumidityComfort::unknown)
         humidityLedProgress_.pause();
-    else {
-        if(buzzer_)
-            buzzer_->notify();
-    }
 
     humidityComfort_ = comfort;
     humidityLedGroup_->setLed(int(comfort));

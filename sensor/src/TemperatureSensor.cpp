@@ -31,8 +31,8 @@ namespace {
     }
 }
 
-TemperatureSensor::TemperatureSensor(uint8_t sensorPin, Util::TaskScheduler* scheduler, LedGroup* ledGroup, Buzzer* buzzer)
-: sensorPin_(sensorPin), comfort_(Comfort::UNKNOWN), ledGroup_(ledGroup), ledProgress_(ledGroup), buzzer_(buzzer) {
+TemperatureSensor::TemperatureSensor(uint8_t sensorPin, Util::TaskScheduler* scheduler, LedGroup* ledGroup)
+: sensorPin_(sensorPin), comfort_(Comfort::UNKNOWN), ledGroup_(ledGroup), ledProgress_(ledGroup) {
     scheduler->addTask(&ledProgress_);
     scheduler->addTask(this);
 }
@@ -66,6 +66,4 @@ void TemperatureSensor::onComfortChange(Comfort comfort, bool initialChange) {
 
     if(initialChange)
         ledProgress_.remove();
-    else
-        buzzer_->notify();
 }
