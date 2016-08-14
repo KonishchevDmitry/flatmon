@@ -20,8 +20,9 @@ using Util::Logging::log;
 
     // RadioHead breaks PWM on the following pins because of timer usage:
     //
-    //    Board      Timer  Unusable PWM
-    // Arduino Uno  Timer1         9, 10
+    //    Board       Timer  Unusable PWM
+    // Arduino Uno   Timer1         9, 10
+    // Arduino Mega  Timer1        11, 12
     const int TRANSMITTER_SPEED = 1000;
     const int TRANSMITTER_TX_PIN = 9;
     const int TRANSMITTER_RX_PIN = 8;

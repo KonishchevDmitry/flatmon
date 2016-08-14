@@ -14,7 +14,11 @@ using Common::SensorMessage;
 
 namespace {
 
-// FIXME: Add unusable PWM notes (because of Timer1 usage)
+// RadioHead breaks PWM on the following pins because of timer usage:
+//
+//    Board       Timer  Unusable PWM
+// Arduino Uno   Timer1         9, 10
+// Arduino Mega  Timer1        11, 12
 const int TRANSMITTER_SPEED = 1000;
 const int TRANSMITTER_RX_PIN = 8;
 const int TRANSMITTER_TX_PIN = A4;
@@ -26,7 +30,7 @@ char bitsToHex(uint8_t bits) {
     return bits < 10 ? '0' + bits : 'A' + bits - 10;
 }
 
-// FIXME: add checksum with invertion (~)
+// FIXME: add checksum
 void sendMessageToServer(const void* data, size_t size) {
     char buf[size * 2 + 1];
     size_t bufPos = 0;
