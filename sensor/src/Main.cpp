@@ -11,7 +11,6 @@
 #include "Dht22.hpp"
 #include "Display.hpp"
 #include "Indication.hpp"
-#include "TemperatureSensor.hpp"
 
 using Util::Logging::log;
 
