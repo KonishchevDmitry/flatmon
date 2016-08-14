@@ -22,4 +22,3 @@ class Buzzer: public Util::Task {
 };
 
 #endif
-
