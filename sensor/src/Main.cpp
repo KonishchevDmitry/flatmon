@@ -1,5 +1,3 @@
-// FIXME: Measure current consumption of the scheme. Can Arduino Uno provide it without any problems?
-
 #include <Util.h>
 #include <Util/Assertion.hpp>
 #include <Util/Constants.hpp>
@@ -85,6 +83,7 @@ const uint8_t LED_BRIGHTNESS_CONTROLLING_PINS[] = {5};
 // Arduino Uno          3, 11
 // Arduino Mega         9, 10
 const int BUZZER_PIN = 11;
+
 
 void abortHandler(
 #if UTIL_VERBOSE_ASSERTS
