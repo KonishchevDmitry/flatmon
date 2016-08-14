@@ -2,6 +2,7 @@
 #define Co2Sensor_hpp
 
 #include <Util/Core.hpp>
+#include <Util/MonotonicTime.hpp>
 #include <Util/TaskScheduler.hpp>
 
 #include "Buzzer.hpp"
@@ -43,6 +44,9 @@ class Co2Sensor: public Util::Task {
 
         Comfort comfort_;
         uint16_t concentration_;
+
+        Util::MonotonicTime warningLevelStartTime_;
+        Util::MonotonicTime lastNotificationTime_;
 
         LedGroup* ledGroup_;
         LedProgressTask ledProgress_;

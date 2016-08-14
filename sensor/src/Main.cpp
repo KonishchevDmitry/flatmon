@@ -31,7 +31,8 @@ using Util::Logging::log;
 
 // MH-Z19 connection notes:
 // Vin - 5V
-// RX/TX/PWM should be connected to Arduino pins through 5V -> 3.3V logic level shifter
+// HD - 3.3V
+// RX/TX should be connected to Arduino pins through 5V -> 3.3V logic level shifter
 #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
     // AltSoftSerial always uses these pins and breaks PWM on the following pins:
     //
@@ -97,8 +98,7 @@ void setup() {
 
     Util::TaskScheduler scheduler;
 
-    // FIXME: Do we need it?
-    // Buzzer buzzer(&scheduler, BUZZER_PIN);
+    Buzzer buzzer(&scheduler, BUZZER_PIN);
 
     ShiftRegisterLeds leds(SHIFT_REGISTER_DATA_PIN, SHIFT_REGISTER_CLOCK_PIN, SHIFT_REGISTER_LATCH_PIN);
     const size_t ledsNum = sizeof LED_BRIGHTNESS_CONTROLLING_PINS / sizeof *LED_BRIGHTNESS_CONTROLLING_PINS;
@@ -112,9 +112,9 @@ void setup() {
     LedGroup co2Leds(&leds, 8, 4);
 
     #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
-        Co2UartSensor co2Sensor(&SOFTWARE_SERIAL, &scheduler, &co2Leds, &LCD_DISPLAY);
+        Co2UartSensor co2Sensor(&SOFTWARE_SERIAL, &scheduler, &co2Leds, &LCD_DISPLAY, &buzzer);
     #else
-        Co2PwmSensor co2Sensor(CO2_SENSOR_PWM_PIN, &scheduler, &co2Leds, &LCD_DISPLAY);
+        Co2PwmSensor co2Sensor(CO2_SENSOR_PWM_PIN, &scheduler, &co2Leds, &LCD_DISPLAY, &buzzer);
     #endif
 
     #if CONFIG_ENABLE_TRANSMITTER

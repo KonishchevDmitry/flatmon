@@ -6,6 +6,7 @@
 #include "Co2Sensor.hpp"
 
 using Util::Logging::log;
+using Util::MonotonicTime;
 namespace Constants = Util::Constants;
 
 enum class Co2Sensor::Comfort: uint8_t {unknown, normal, warning, high, critical};
@@ -78,20 +79,42 @@ void Co2Sensor::onError() {
 }
 
 void Co2Sensor::onComfort(Comfort comfort) {
-    if(comfort == comfort_)
-        return;
+    bool changed = comfort != comfort_;
 
-    if(comfort == Comfort::unknown)
-        ledProgress_.resume();
-    else if(comfort_ == Comfort::unknown)
-        ledProgress_.pause();
-    else {
-        if(buzzer_)
-            buzzer_->notify();
+    if(comfort == Comfort::unknown) {
+        if(changed) {
+            warningLevelStartTime_ = MonotonicTime();
+            ledProgress_.resume();
+        }
+        return;
     }
 
-    comfort_ = comfort;
-    ledGroup_->setLed(int(comfort));
+    if(comfort_ == Comfort::unknown)
+        ledProgress_.pause();
+
+    if(buzzer_) {
+        MonotonicTime noTime = MonotonicTime();
+        MonotonicTime curTime = MonotonicTime::now();
+        bool onWarningLevel = uint8_t(comfort) >= uint8_t(Comfort::warning);
+
+        if(onWarningLevel) {
+            if(warningLevelStartTime_ == noTime)
+                warningLevelStartTime_ = curTime;
+            else if(
+                curTime - warningLevelStartTime_ >= 5 * Constants::MINUTE_MILLIS &&
+                (lastNotificationTime_ == noTime || curTime - lastNotificationTime_ >= 30 * Constants::MINUTE_MILLIS)
+            ) {
+                buzzer_->notify();
+                lastNotificationTime_ = curTime;
+            }
+        } else
+            warningLevelStartTime_ = MonotonicTime();
+    }
+
+    if(changed) {
+        comfort_ = comfort;
+        ledGroup_->setLed(int(comfort));
+    }
 }
 
 
