@@ -18,14 +18,18 @@
 using Util::Logging::log;
 
 #if CONFIG_ENABLE_TRANSMITTER
+    #include <RH_ASK.h>
+    #include "Transmitter.hpp"
+
+    // RadioHead breaks PWM on the following pins because of timer usage:
+    //
+    //    Board      Timer  Unusable PWM
+    // Arduino Uno  Timer1         9, 10
     const int TRANSMITTER_SPEED = 1000;
     const int TRANSMITTER_TX_PIN = 9;
     const int TRANSMITTER_RX_PIN = 8;
     const int TRANSMITTER_PTT_PIN = 7;
 
-    // FIXME: Add unusable PWM notes (because of Timer1 usage)
-    #include <RH_ASK.h>
-    #include "Transmitter.hpp"
     RH_ASK TRANSMITTER(TRANSMITTER_SPEED, TRANSMITTER_RX_PIN, TRANSMITTER_TX_PIN, TRANSMITTER_PTT_PIN);
 #endif
 
@@ -34,12 +38,11 @@ using Util::Logging::log;
 // HD - 3.3V
 // RX/TX should be connected to Arduino pins through 5V -> 3.3V logic level shifter
 #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
-    // AltSoftSerial always uses these pins and breaks PWM on the following pins:
+    // AltSoftSerial always uses these pins and breaks PWM on the following pins because of timer usage:
     //
-    //           Board          TX  RX  Unusable PWM
-    // Arduino Uno, Mini         9   8            10
-    // Arduino Leonardo, Micro   5  13        (none)
-    // Arduino Mega             46  48        44, 45
+    //    Board      TX  RX   Timer  Unusable PWM
+    // Arduino Uno    9   8  Timer1            10
+    // Arduino Mega  46  48  Timer5        44, 45
     #include <AltSoftSerial.h>
     AltSoftSerial SOFTWARE_SERIAL;
 
@@ -76,7 +79,11 @@ Display LCD_DISPLAY(LCD_RS_PIN, LCD_E_PIN, LCD_D4_PIN, LCD_D5_PIN, LCD_D6_PIN, L
 const int LIGHT_SENSOR_PIN = A0;
 const uint8_t LED_BRIGHTNESS_CONTROLLING_PINS[] = {5};
 
-// Attention: Use of tone() function interferes with PWM output on pins 3 and 11 (on boards other than the Mega).
+// Use of tone() function breaks PWM on the following pins because of Timer2 usage:
+//
+//    Board      Unusable PWM
+// Arduino Uno          3, 11
+// Arduino Mega         9, 10
 const int BUZZER_PIN = 11;
 
 void abortHandler(
