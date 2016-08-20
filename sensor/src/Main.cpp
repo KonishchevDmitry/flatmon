@@ -25,10 +25,8 @@ using Util::Logging::log;
     // Arduino Mega  Timer1        11, 12
     const int TRANSMITTER_SPEED = 1000;
     const int TRANSMITTER_TX_PIN = 9;
-    const int TRANSMITTER_RX_PIN = 8;
-    const int TRANSMITTER_PTT_PIN = 7;
 
-    RH_ASK TRANSMITTER(TRANSMITTER_SPEED, TRANSMITTER_RX_PIN, TRANSMITTER_TX_PIN, TRANSMITTER_PTT_PIN);
+    RH_ASK_TRANSMITTER TRANSMITTER(TRANSMITTER_SPEED, TRANSMITTER_TX_PIN);
 #endif
 
 // MH-Z19 connection notes:
