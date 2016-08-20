@@ -1,3 +1,6 @@
 [submodule "lib/AltSoftSerial"]
 	path = lib/AltSoftSerial
 	url = git@github.com:PaulStoffregen/AltSoftSerial.git
+[submodule "lib/RadioHead"]
+	path = lib/RadioHead
+	url = git@github.com:KonishchevDmitry/RadioHead.git
