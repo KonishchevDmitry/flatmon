@@ -21,9 +21,7 @@ namespace {
 // Arduino Mega  Timer1        11, 12
 const int TRANSMITTER_SPEED = 1000;
 const int TRANSMITTER_RX_PIN = 8;
-const int TRANSMITTER_TX_PIN = A4;
-const int TRANSMITTER_PTT_PIN = A5;
-RH_ASK RECEIVER(TRANSMITTER_SPEED, TRANSMITTER_RX_PIN, TRANSMITTER_TX_PIN, TRANSMITTER_PTT_PIN);
+RH_ASK_RECEIVER RECEIVER(TRANSMITTER_SPEED, TRANSMITTER_RX_PIN);
 
 char bitsToHex(uint8_t bits) {
     UTIL_ASSERT(bits <= 15);
@@ -54,7 +52,9 @@ void setup() {
 
     log(F("Listening to messages from sensors..."));
 
+    TimeMillis lastStatsTime = millis();
     TimeMillis lastHeartbeatTime = millis();
+
     uint8_t sensorMessageBuf[sizeof(SensorMessage) + 1];
     uint8_t messageSize;
 
@@ -63,10 +63,16 @@ void setup() {
 
         if(!RECEIVER.recv(sensorMessageBuf, &messageSize)) {
             TimeMillis curTime = millis();
+            bool noMessagesTimeoutExceeded = curTime - lastHeartbeatTime >= Constants::MINUTE_MILLIS;
 
-            if(curTime - lastHeartbeatTime >= Constants::MINUTE_MILLIS) {
+            if(noMessagesTimeoutExceeded) {
                 log(F("I'm alive but there are no messages from sensors."));
                 lastHeartbeatTime = curTime;
+            }
+
+            if(noMessagesTimeoutExceeded || curTime - lastStatsTime >= Constants::MINUTE_MILLIS) {
+                log(F("Received messages statistics: "), RECEIVER.rxGood(), F(" good, "), RECEIVER.rxBad(), F(" bad."));
+                lastStatsTime = curTime;
             }
 
             continue;
