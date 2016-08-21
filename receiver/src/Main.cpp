@@ -23,26 +23,6 @@ const int TRANSMITTER_SPEED = 1000;
 const int TRANSMITTER_RX_PIN = 8;
 RH_ASK_RECEIVER RECEIVER(TRANSMITTER_SPEED, TRANSMITTER_RX_PIN);
 
-char bitsToHex(uint8_t bits) {
-    UTIL_ASSERT(bits <= 15);
-    return bits < 10 ? '0' + bits : 'A' + bits - 10;
-}
-
-// FIXME: add checksum
-void sendMessageToServer(const void* data, size_t size) {
-    char buf[size * 2 + 1];
-    size_t bufPos = 0;
-
-    for(size_t byteId = 0; byteId < size; byteId++) {
-        uint8_t value = reinterpret_cast<const uint8_t*>(data)[byteId];
-        buf[bufPos++] = bitsToHex(value >> 4);
-        buf[bufPos++] = bitsToHex(value & 0b1111);
-    }
-    buf[bufPos] = '\0';
-
-    log(F("> "), buf);
-}
-
 }
 
 void setup() {
@@ -87,9 +67,16 @@ void setup() {
         }
 
         SensorMessage* message = reinterpret_cast<SensorMessage*>(sensorMessageBuf);
-        log(F("Got a message from #"), message->sensorId, F(" sensor."));
-        message->co2Concentration = htons(message->co2Concentration);
-        sendMessageToServer(message, sizeof(SensorMessage));
+        if(message->messageType != SensorMessage::MESSAGE_TYPE) {
+            log(F("Got a message with invalid message type."));
+            continue;
+        }
+
+        log(F("Got a message from #"), message->sensorId, F(" sensor:"));
+        uint32_t checksum = uint32_t(message->sensorId) + message->temperature + message->humidity +
+                            message->co2Concentration + message->pressure;
+        log(F("> "), message->sensorId, ",", message->temperature, ",", message->humidity, ",",
+            message->co2Concentration, ",", message->pressure, ",", checksum);
     }
 }
 

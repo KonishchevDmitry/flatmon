@@ -24,7 +24,7 @@ typedef unsigned long TimeMicros;
 namespace Util { namespace Core {
     void init();
     size_t getStackFreeMemorySize();
-    void stopDevice();
+    void stopDevice() __attribute__((__noreturn__));
 }}
 #endif
 

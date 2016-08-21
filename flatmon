@@ -38,11 +38,12 @@ class Sensor:
         self.__channel_last_update_time = 0
         self.__sending_thread = None
 
-    def on_metrics(self, temperature=None, humidity=None, co2_concentration=None):
+    def on_metrics(self, temperature=None, humidity=None, co2_concentration=None, pressure=None):
         metrics = drop_none({
             "field1": temperature,
             "field2": humidity,
             "field3": co2_concentration,
+            "field4": pressure,
         })
 
         if not metrics:
@@ -104,7 +105,7 @@ class Thingspeak:
         for sensor in self.__sensors.values():
             sensor.wait_for_active_requests()
 
-    def on_sensor_metrics(self, sensor_id, temperature=None, humidity=None, co2_concentration=None):
+    def on_sensor_metrics(self, sensor_id, temperature=None, humidity=None, co2_concentration=None, pressure=None):
         try:
             sensor = self.__sensors[sensor_id]
         except KeyError:
@@ -112,7 +113,7 @@ class Thingspeak:
             return
 
         log.info("Got metrics from '%s' sensor.", sensor.name)
-        sensor.on_metrics(temperature=temperature, humidity=humidity, co2_concentration=co2_concentration)
+        sensor.on_metrics(temperature, humidity, co2_concentration, pressure)
 
     def send_request(self, method, request):
         response = requests.post("https://api.thingspeak.com/{}.json".format(method), headers={
@@ -174,36 +175,23 @@ class Monitor:
 
     def __on_sensor_message(self, message):
         try:
-            sensor_id, temperature, humidity, co2_concentration = self.__unpack_message(message, 1, 1, 1, 2)
+            numbers = [int(number) for number in message.split(b",")]
+            sensor_id, temperature, humidity, co2_concentration, pressure, checksum = numbers
+            if sum(numbers[:-1]) != checksum:
+                raise ValueError()
         except ValueError:
-            log.error("Got an invalid sensor message from receiver: %r.", message)
+            log.error("Got a corrupted sensor message from receiver: %r.", message)
             return
 
-        # FIXME
-        if temperature == 127:
-            temperature = None
+        temperature = temperature or None
+        humidity = humidity or None
+        co2_concentration = co2_concentration or None
+        pressure = pressure or None
 
-        # FIXME
-        if humidity == 127:
-            humidity = None
+        log.info("Temperature: %s, humidity: %s, CO2 concentration: %s, pressure: %s.",
+                 temperature, humidity, co2_concentration, pressure)
 
-        # FIXME
-        if co2_concentration == 0xFFFF:
-            co2_concentration = None
-
-        log.info("Temperature: %s, humidity: %s, CO2 concentration: %s.", temperature, humidity, co2_concentration)
-        self.__thingspeak.on_sensor_metrics(sensor_id, temperature, humidity, co2_concentration)
-
-    @staticmethod
-    def __unpack_message(message, *sizes):
-        if len(message) != sum(sizes) * 2:
-            raise ValueError
-
-        pos = 0
-        for size in sizes:
-            end_pos = pos + size * 2
-            yield int(message[pos:end_pos], 16)
-            pos = end_pos
+        self.__thingspeak.on_sensor_metrics(sensor_id, temperature, humidity, co2_concentration, pressure)
 
 
 def load_config(path):

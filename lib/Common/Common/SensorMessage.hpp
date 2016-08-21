@@ -5,18 +5,14 @@
 
 namespace Common {
 
-// FIXME: add some message type for validation
-// FIXME: pack into bits instead of bytes
 struct SensorMessage {
-    // FIXME: Alter the values
-    static constexpr uint8_t UNKNOWN_HUMIDITY = 127;
-    static constexpr int8_t UNKNOWN_TEMPERATURE = 127;
-    static constexpr uint16_t UNKNOWN_CO2_CONCENTRATION = 0xFFFF;
-
-    uint8_t sensorId;
-    int8_t temperature;
-    uint8_t humidity;
-    uint16_t co2Concentration;
+    static constexpr uint16_t MESSAGE_TYPE = 0b1100110011;
+    uint16_t messageType      : 10;
+    uint8_t  sensorId         :  3;
+    uint8_t  temperature      :  6;
+    uint8_t  humidity         :  7;
+    uint16_t co2Concentration : 12;
+    uint16_t pressure         : 10;
 } __attribute__((packed));
 
 }

@@ -24,7 +24,7 @@ namespace {
 }
 
 PressureSensor::PressureSensor(Util::TaskScheduler* scheduler, LedGroup* ledGroup, Display* display)
-: state_(State::initialize), comfort_(Comfort::unknown), ledGroup_(ledGroup), ledProgress_(ledGroup),
+: state_(State::initialize), pressure_(0), comfort_(Comfort::unknown), ledGroup_(ledGroup), ledProgress_(ledGroup),
   display_(display) {
     scheduler->addTask(&ledProgress_);
     scheduler->addTask(this);
@@ -32,8 +32,7 @@ PressureSensor::PressureSensor(Util::TaskScheduler* scheduler, LedGroup* ledGrou
 }
 
 bool PressureSensor::getPressure(uint16_t* pressure) const {
-    // FIXME
-    if(comfort_ == Comfort::unknown)
+    if(!pressure_)
         return false;
 
     *pressure = pressure_;
@@ -100,6 +99,7 @@ void PressureSensor::onError(const FlashChar *error) {
     if(display_)
         display_->resetPressure();
 
+    pressure_ = 0;
     this->onComfort(Comfort::unknown);
 
     if(this->state_ != State::initialize)

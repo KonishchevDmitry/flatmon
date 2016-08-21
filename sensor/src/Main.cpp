@@ -191,7 +191,7 @@ void setup() {
     PressureSensor pressureSensor(&scheduler, &pressureLeds, &LCD);
 
     #if CONFIG_ENABLE_TRANSMITTER
-        Transmitter transmitter(&TRANSMITTER, &scheduler, &dht22, &co2Sensor);
+        Transmitter transmitter(&TRANSMITTER, &scheduler, &dht22, &co2Sensor, &pressureSensor);
     #endif
 
     initialize();
