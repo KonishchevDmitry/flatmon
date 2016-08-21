@@ -46,6 +46,7 @@ void sendMessageToServer(const void* data, size_t size) {
 }
 
 void setup() {
+    Util::Core::init();
     Util::Logging::init();
     if(!RECEIVER.init())
         UTIL_LOGICAL_ERROR(F("Failed to initialize the receiver."));
