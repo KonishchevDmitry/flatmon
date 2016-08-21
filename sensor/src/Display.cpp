@@ -128,6 +128,13 @@ void Display::showAssertionError(
 #endif
 }
 
+void Display::showSystemLockupError() {
+    lcd_.clear();
+    lcd_.print("System lockup");
+    lcd_.setCursor(0, 1);
+    lcd_.print("detected.");
+}
+
 void Display::setText(uint8_t row, uint8_t col, const char* text) {
     lcd_.setCursor(col, row);
     lcd_.print(text);

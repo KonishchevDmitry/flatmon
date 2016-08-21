@@ -28,6 +28,8 @@ class Display {
         #endif
         );
 
+        void showSystemLockupError();
+
     private:
         void setText(uint8_t row, uint8_t col, const char* text);
 
