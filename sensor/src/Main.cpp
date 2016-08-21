@@ -72,9 +72,9 @@ const int LCD_RS_PIN = A1;
 const int LCD_E_PIN = A2;
 // D0-D3 - not connected
 const int LCD_D4_PIN = A3;
-const int LCD_D5_PIN = A4;
-const int LCD_D6_PIN = A5;
-const int LCD_D7_PIN = 10;
+const int LCD_D5_PIN = 10;
+const int LCD_D6_PIN = 8;
+const int LCD_D7_PIN = 7;
 // A (LED+ has internal resistor) - 5V
 // K (LED-) - GND
 Display LCD(LCD_RS_PIN, LCD_E_PIN, LCD_D4_PIN, LCD_D5_PIN, LCD_D6_PIN, LCD_D7_PIN);
