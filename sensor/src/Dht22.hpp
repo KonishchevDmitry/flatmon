@@ -4,7 +4,6 @@
 #include <Util/Core.hpp>
 #include <Util/TaskScheduler.hpp>
 
-#include "Buzzer.hpp"
 #include "Display.hpp"
 #include "Indication.hpp"
 
