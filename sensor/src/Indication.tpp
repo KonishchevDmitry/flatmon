@@ -21,8 +21,10 @@ LedBrightnessRegulator<ledsNum>::LedBrightnessRegulator(
     #endif
 
     pinMode(lightSensorPin_, INPUT);
-    for(auto pin : transistorBasePins_)
+    for(auto pin : transistorBasePins_) {
         pinMode(pin, OUTPUT);
+        analogWrite(pin, 1);
+    }
 
     scheduler->addTask(this);
 }
