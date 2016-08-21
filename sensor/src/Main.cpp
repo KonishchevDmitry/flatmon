@@ -139,7 +139,7 @@ void initialize() {
 
     wdt_enable(
     #if UTIL_ENABLE_LOGGING
-        WDTO_60MS
+        WDTO_120MS
     #else
         WDTO_15MS
     #endif

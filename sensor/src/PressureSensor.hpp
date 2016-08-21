@@ -18,7 +18,7 @@ class PressureSensor: public Util::Task {
         typedef void (PressureSensor::* StateHandler)();
 
     public:
-        PressureSensor(Util::TaskScheduler* scheduler, LedGroup* ledGroup, Display* display=nullptr);
+        PressureSensor(Util::TaskScheduler* scheduler, LedGroup* ledGroup, Display* display = nullptr);
 
     public:
         bool getPressure(uint16_t* pressure) const;

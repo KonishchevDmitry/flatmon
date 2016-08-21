@@ -18,7 +18,7 @@ class Dht22: public Util::Task {
     public:
         Dht22(uint8_t dataPin, Util::TaskScheduler* scheduler,
               LedGroup* temperatureLedGroup, LedGroup* humidityLedGroup,
-              Display* display=nullptr);
+              Display* display = nullptr);
 
     public:
         bool getTemperature(int8_t* temperature) const;

@@ -83,8 +83,9 @@ void PressureSensor::onReadPressure() {
     log(F("Pressure: "), pressure_, F(" mmHg."));
 
     // FIXME
-    // if(display_)
-        // display_->setHumidity(humidity_);
+    uint8_t dispersion = 0;
+    if(display_)
+        display_->setPressure(pressure_, dispersion);
 
     // FIXME
     this->onComfort(Comfort::normal);
@@ -94,14 +95,10 @@ void PressureSensor::onReadPressure() {
 }
 
 void PressureSensor::onError(const FlashChar *error) {
-    // FIXME
     log(error, F(": I2C error code #"), int(barometer_.getError()), F("."));
 
-    // FIXME
-    // if(display_) {
-    //     display_->resetHumidity();
-    //     display_->resetTemperature();
-    // }
+    if(display_)
+        display_->resetPressure();
 
     this->onComfort(Comfort::unknown);
 

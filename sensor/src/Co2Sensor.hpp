@@ -26,7 +26,8 @@ class Co2Sensor: public Util::Task {
         typedef uint16_t Concentration;
 
     public:
-        Co2Sensor(Util::TaskScheduler* scheduler, LedGroup* ledGroup, Display* display=nullptr, Buzzer* buzzer=nullptr);
+        Co2Sensor(Util::TaskScheduler* scheduler, LedGroup* ledGroup, Display* display = nullptr,
+                  Buzzer* buzzer = nullptr);
 
     public:
         bool getConcentration(Concentration* concentration) const;
@@ -61,7 +62,7 @@ class Co2PwmSensor: public Co2Sensor {
 
     public:
         Co2PwmSensor(uint8_t pwmPin, Util::TaskScheduler* scheduler, LedGroup* ledGroup,
-                     Display* display=nullptr, Buzzer* buzzer=nullptr);
+                     Display* display = nullptr, Buzzer* buzzer = nullptr);
 
     public:
     #if CO2_PWM_SENSOR_ENABLE_PROFILING
@@ -104,7 +105,7 @@ class Co2UartSensor: public Co2Sensor {
 
     public:
         Co2UartSensor(SensorSerial* sensorSerial, Util::TaskScheduler* scheduler, LedGroup* ledGroup,
-                      Display* display=nullptr, Buzzer* buzzer=nullptr);
+                      Display* display = nullptr, Buzzer* buzzer = nullptr);
 
     public:
         virtual void execute();
