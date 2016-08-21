@@ -161,7 +161,7 @@ void Dht22::onReading() {
         return this->onError();
     }
 
-    humidity_ = lround(float(payload[0]) / 10);
+    humidity_ = lroundf(float(payload[0]) / 10);
     HumidityComfort humidityComfort = getHumidityComfort(humidity_);
 
     int16_t encodedTemperature = payload[1];
@@ -171,7 +171,7 @@ void Dht22::onReading() {
         encodedTemperature = -encodedTemperature;
     }
 
-    temperature_ = lround(float(encodedTemperature) / 10);
+    temperature_ = lroundf(float(encodedTemperature) / 10);
     TemperatureComfort temperatureComfort = getTemperatureComfort(temperature_);
 
     log(F("Humidity: "), humidity_, F("% ("), HUMIDITY_COMFORT_NAMES[int(humidityComfort)], F(")."));
