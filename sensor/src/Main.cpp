@@ -1,3 +1,7 @@
+#include <avr/wdt.h>
+
+#include <EEPROM.h>
+
 #include <Util.h>
 #include <Util/Assertion.hpp>
 #include <Util/Constants.hpp>
@@ -83,6 +87,24 @@ const uint8_t LED_BRIGHTNESS_CONTROLLING_PINS[] = {5};
 const int BUZZER_PIN = 11;
 
 
+// EEPROM address where system reset reason is stored:
+// 0 - ordinary reset
+// 1 - reset by watchdog timer
+const uint16_t SYSTEM_RESET_REASON_FLAG_ADDRESS = EEPROM.length() - 1;
+
+class WdtResetter: public Util::Task {
+    public:
+        WdtResetter(Util::TaskScheduler* scheduler) {
+            scheduler->addTask(this);
+        }
+
+    public:
+        virtual void execute() {
+            wdt_reset();
+            this->scheduleAfter(10);
+        }
+};
+
 void abortHandler(
 #if UTIL_VERBOSE_ASSERTS
     const FlashChar* file, int line
@@ -95,12 +117,49 @@ void abortHandler(
     );
 }
 
+void initialize() {
+    size_t freeMemorySize = Util::Core::getStackFreeMemorySize();
+    UTIL_ASSERT(freeMemorySize > 100, F("Failed to start: Not enough memory."));
+    log(F("Free memory size: "), freeMemorySize, F(" bytes."));
+
+    if(EEPROM[SYSTEM_RESET_REASON_FLAG_ADDRESS]) {
+        EEPROM[SYSTEM_RESET_REASON_FLAG_ADDRESS] = 0;
+        log(F("System lockup detected."));
+        LCD_DISPLAY.showSystemLockupError();
+        Util::Core::stopDevice();
+    }
+
+    wdt_enable(
+    #if UTIL_ENABLE_LOGGING
+        WDTO_60MS
+    #else
+        WDTO_15MS
+    #endif
+    );
+    WDTCSR |= _BV(WDIE);
+}
+
+ISR(WDT_vect) {
+    EEPROM[SYSTEM_RESET_REASON_FLAG_ADDRESS] = 1;
+
+    // Use this hack to reset the system
+    wdt_enable(WDTO_15MS);
+    while(true)
+        ;
+}
+
 void setup() {
+    // Disable watchdog timer which may be set if the MCU has been reset by enabled watchdog timer
+    wdt_disable();
+
+    Util::Core::init();
     Util::Logging::init();
+
     log(F("Initializing..."));
     Util::Assertion::setAbortHandler(abortHandler);
 
     Util::TaskScheduler scheduler;
+    WdtResetter wdtResetter(&scheduler);
 
     Buzzer buzzer(&scheduler, BUZZER_PIN);
 
@@ -125,10 +184,8 @@ void setup() {
         Transmitter transmitter(&TRANSMITTER, &scheduler, &dht22, &co2Sensor);
     #endif
 
-    size_t freeMemorySize = getStackFreeMemorySize();
-    UTIL_ASSERT(freeMemorySize > 100, F("Failed to start: Not enough memory."));
-    log(F("Free memory size: "), freeMemorySize, F(" bytes. Starting the device..."));
-
+    initialize();
+    log(F("The system has been initialized. Starting the device."));
     scheduler.run();
 }
 
