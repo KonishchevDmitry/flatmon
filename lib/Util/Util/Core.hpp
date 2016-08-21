@@ -20,8 +20,12 @@ typedef unsigned long TimeMicros;
 #ifdef ARDUINO
     // A pointer returned by F() macro.
     typedef __FlashStringHelper FlashChar;
-#endif
 
-size_t getStackFreeMemorySize();
+namespace Util { namespace Core {
+    void init();
+    size_t getStackFreeMemorySize();
+    void stopDevice();
+}}
+#endif
 
 #endif

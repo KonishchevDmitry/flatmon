@@ -35,14 +35,7 @@ namespace Util { namespace Assertion {
                 ABORT_HANDLER();
         #endif
 
-        bool state = false;
-        pinMode(LED_BUILTIN, OUTPUT);
-
-        while(true) {
-            state = !state;
-            digitalWrite(LED_BUILTIN, state);
-            delay(500);
-        }
+        Util::Core::stopDevice();
     #else
         ::abort();
     #endif
