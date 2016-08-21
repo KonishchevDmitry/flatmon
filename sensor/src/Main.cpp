@@ -1,6 +1,7 @@
 #include <avr/wdt.h>
 
 #include <EEPROM.h>
+#include <Wire.h>
 
 #include <Util.h>
 #include <Util/Assertion.hpp>
@@ -15,23 +16,13 @@
 #include "Dht22.hpp"
 #include "Display.hpp"
 #include "Indication.hpp"
+#include "PressureSensor.hpp"
 
 using Util::Logging::log;
 
-#if CONFIG_ENABLE_TRANSMITTER
-    #include <RH_ASK.h>
-    #include "Transmitter.hpp"
-
-    // RadioHead breaks PWM on the following pins because of timer usage:
-    //
-    //    Board       Timer  Unusable PWM
-    // Arduino Uno   Timer1         9, 10
-    // Arduino Mega  Timer1        11, 12
-    const int TRANSMITTER_SPEED = 1000;
-    const int TRANSMITTER_TX_PIN = 9;
-
-    RH_ASK_TRANSMITTER TRANSMITTER(TRANSMITTER_SPEED, TRANSMITTER_TX_PIN);
-#endif
+// DHT22 connection notes:
+// One 100nF capacitor should be added between VDD and GND for wave filtering.
+const int DHT_22_SENSOR_PIN = 12;
 
 // MH-Z19 connection notes:
 // Vin - 5V
@@ -52,13 +43,25 @@ using Util::Logging::log;
     const int CO2_SENSOR_PWM_PIN = 2;
 #endif
 
-// DHT22 connection notes:
-// One 100nF capacitor should be added between VDD and GND for wave filtering.
-const int DHT_22_SENSOR_PIN = 12;
+// BMP180 connection notes:
+// VIN: 3.3V
+// GND: GND
+// SDA: Uno - A4, Mega - 20
+// SCL: Uno - A5, Mega - 21
+
+const int LIGHT_SENSOR_PIN = A0;
+const uint8_t LED_BRIGHTNESS_CONTROLLING_PINS[] = {5};
 
 const int SHIFT_REGISTER_DATA_PIN = 6; // SER
 const int SHIFT_REGISTER_CLOCK_PIN = 4; // SRCLK
 const int SHIFT_REGISTER_LATCH_PIN = 3; // RCLK
+
+// Use of tone() function breaks PWM on the following pins because of Timer2 usage:
+//
+//    Board      Unusable PWM
+// Arduino Uno          3, 11
+// Arduino Mega         9, 10
+const int BUZZER_PIN = 11;
 
 // LCD connection:
 // VSS - GND
@@ -74,17 +77,22 @@ const int LCD_D6_PIN = A5;
 const int LCD_D7_PIN = 10;
 // A (LED+ has internal resistor) - 5V
 // K (LED-) - GND
-Display LCD_DISPLAY(LCD_RS_PIN, LCD_E_PIN, LCD_D4_PIN, LCD_D5_PIN, LCD_D6_PIN, LCD_D7_PIN);
+Display LCD(LCD_RS_PIN, LCD_E_PIN, LCD_D4_PIN, LCD_D5_PIN, LCD_D6_PIN, LCD_D7_PIN);
 
-const int LIGHT_SENSOR_PIN = A0;
-const uint8_t LED_BRIGHTNESS_CONTROLLING_PINS[] = {5};
+#if CONFIG_ENABLE_TRANSMITTER
+    #include <RH_ASK.h>
+    #include "Transmitter.hpp"
 
-// Use of tone() function breaks PWM on the following pins because of Timer2 usage:
-//
-//    Board      Unusable PWM
-// Arduino Uno          3, 11
-// Arduino Mega         9, 10
-const int BUZZER_PIN = 11;
+    // RadioHead breaks PWM on the following pins because of timer usage:
+    //
+    //    Board       Timer  Unusable PWM
+    // Arduino Uno   Timer1         9, 10
+    // Arduino Mega  Timer1        11, 12
+    const int TRANSMITTER_SPEED = 1000;
+    const int TRANSMITTER_TX_PIN = 9;
+
+    RH_ASK_TRANSMITTER TRANSMITTER(TRANSMITTER_SPEED, TRANSMITTER_TX_PIN);
+#endif
 
 
 // EEPROM address where system reset reason is stored:
@@ -110,7 +118,7 @@ void abortHandler(
     const FlashChar* file, int line
 #endif
 ) {
-    LCD_DISPLAY.showAssertionError(
+    LCD.showAssertionError(
     #if UTIL_VERBOSE_ASSERTS
         file, line
     #endif
@@ -125,7 +133,7 @@ void initialize() {
     if(EEPROM[SYSTEM_RESET_REASON_FLAG_ADDRESS]) {
         EEPROM[SYSTEM_RESET_REASON_FLAG_ADDRESS] = 0;
         log(F("System lockup detected."));
-        LCD_DISPLAY.showSystemLockupError();
+        LCD.showSystemLockupError();
         Util::Core::stopDevice();
     }
 
@@ -170,15 +178,17 @@ void setup() {
 
     LedGroup temperatureLeds(&leds, 0, 4);
     LedGroup humidityLeds(&leds, 4, 4);
-    Dht22 dht22(DHT_22_SENSOR_PIN, &scheduler, &temperatureLeds, &humidityLeds, &LCD_DISPLAY);
+    Dht22 dht22(DHT_22_SENSOR_PIN, &scheduler, &temperatureLeds, &humidityLeds, &LCD);
 
     LedGroup co2Leds(&leds, 8, 4);
-
     #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
-        Co2UartSensor co2Sensor(&SOFTWARE_SERIAL, &scheduler, &co2Leds, &LCD_DISPLAY, &buzzer);
+        Co2UartSensor co2Sensor(&SOFTWARE_SERIAL, &scheduler, &co2Leds, &LCD, &buzzer);
     #else
-        Co2PwmSensor co2Sensor(CO2_SENSOR_PWM_PIN, &scheduler, &co2Leds, &LCD_DISPLAY, &buzzer);
+        Co2PwmSensor co2Sensor(CO2_SENSOR_PWM_PIN, &scheduler, &co2Leds, &LCD, &buzzer);
     #endif
+
+    LedGroup pressureLeds(&leds, 12, 4);
+    PressureSensor pressureSensor(&scheduler, &pressureLeds, &LCD);
 
     #if CONFIG_ENABLE_TRANSMITTER
         Transmitter transmitter(&TRANSMITTER, &scheduler, &dht22, &co2Sensor);
