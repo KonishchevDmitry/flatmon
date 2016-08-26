@@ -73,7 +73,7 @@ void setup() {
         }
 
         log(F("Got a message from #"), message->sensorId, F(" sensor:"));
-        uint32_t checksum = uint32_t(message->sensorId) + message->temperature + message->humidity +
+        uint16_t checksum = uint16_t(message->sensorId) + message->temperature + message->humidity +
                             message->co2Concentration + message->pressure;
         log(F("> "), message->sensorId, ",", message->temperature, ",", message->humidity, ",",
             message->co2Concentration, ",", message->pressure, ",", checksum);
