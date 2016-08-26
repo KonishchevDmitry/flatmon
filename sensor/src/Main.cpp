@@ -50,7 +50,7 @@ const int DHT_22_SENSOR_PIN = 12;
 // SCL: Uno - A5, Mega - 21
 
 const int LIGHT_SENSOR_PIN = A0;
-const uint8_t LED_BRIGHTNESS_CONTROLLING_PINS[] = {5};
+const int LED_BRIGHTNESS_CONTROLLING_PIN = 5;
 
 const int SHIFT_REGISTER_DATA_PIN = 6; // SER
 const int SHIFT_REGISTER_CLOCK_PIN = 4; // SRCLK
@@ -172,9 +172,7 @@ void setup() {
     Buzzer buzzer(&scheduler, BUZZER_PIN);
 
     ShiftRegisterLeds leds(SHIFT_REGISTER_DATA_PIN, SHIFT_REGISTER_CLOCK_PIN, SHIFT_REGISTER_LATCH_PIN);
-    const size_t ledsNum = sizeof LED_BRIGHTNESS_CONTROLLING_PINS / sizeof *LED_BRIGHTNESS_CONTROLLING_PINS;
-    LedBrightnessRegulator<ledsNum> ledBrightnessRegulator(
-        LIGHT_SENSOR_PIN, LED_BRIGHTNESS_CONTROLLING_PINS, &scheduler);
+    LedBrightnessRegulator ledBrightnessRegulator(LIGHT_SENSOR_PIN, LED_BRIGHTNESS_CONTROLLING_PIN, &scheduler);
 
     LedGroup temperatureLeds(&leds, 0, 4);
     LedGroup humidityLeds(&leds, 4, 4);
