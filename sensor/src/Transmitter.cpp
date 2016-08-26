@@ -7,6 +7,7 @@
 #include "Config.hpp"
 #include "Transmitter.hpp"
 
+using Util::Logging::log;
 using Util::Logging::vlog;
 using Common::SensorMessage;
 namespace Constants = Util::Constants;
