@@ -6,4 +6,4 @@
 	url = git@github.com:KonishchevDmitry/RadioHead.git
 [submodule "lib/SFE_BMP180"]
 	path = lib/SFE_BMP180
-	url = git@github.com:sparkfun/BMP180_Breakout_Arduino_Library.git
+	url = git@github.com:KonishchevDmitry/SFE_BMP180.git
