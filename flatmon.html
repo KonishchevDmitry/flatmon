@@ -1,166 +1,166 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>Indoor air quality monitoring</title>
+    <title>Indoor air quality monitoring</title>
 
-        <style>
-            div.switches {
-                float: right;
-                margin: 10px 20px;
-                display: inline-block;
-            }
+    <style>
+        div.switches {
+            float: right;
+            margin: 10px 20px;
+            display: inline-block;
+        }
 
-            div.switches label {
-                margin-left: 10px;
-            }
+        div.switches label {
+            margin-left: 10px;
+        }
 
-            iframe.chart {
-                width: 100%;
-                height: 260px;
-                border: 1px solid #cccccc;
-            }
-        </style>
+        iframe.chart {
+            width: 100%;
+            height: 260px;
+            border: 1px solid #cccccc;
+        }
+    </style>
 
-        <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-        <link rel="stylesheet" href="https://code.getmdl.io/1.2.0/material.indigo-pink.min.css">
-        <script defer src="https://code.getmdl.io/1.2.0/material.min.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://code.getmdl.io/1.2.0/material.indigo-pink.min.css">
+    <script defer src="https://code.getmdl.io/1.2.0/material.min.js"></script>
 
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
 
-        <script>
-            var rooms = {
-                "kitchen": 134669,
-                "big-room": 134669,
-                "little-room": 134669,
-            };
+    <script>
+        var rooms = {
+            "kitchen": 134669,
+            "big-room": 134669,
+            "little-room": 134669,
+        };
 
-            var sensors = {
-                "co2-concentration": {chart_id: 3, order: 1, name: "CO2 concentration"},
-                "humidity": {chart_id: 2, order: 2, name: "Humidity"},
-                "temperature": {chart_id: 1, order: 3, name: "Temperature"},
-                "pressure": {chart_id: 4, order: 4, name: "Pressure"},
-            }
-            $.each(sensors, function(id, sensor) {
-                sensor.id = id;
+        var sensors = {
+            "co2-concentration": {chart_id: 3, order: 1, name: "CO2 concentration"},
+            "humidity": {chart_id: 2, order: 2, name: "Humidity"},
+            "temperature": {chart_id: 1, order: 3, name: "Temperature"},
+            "pressure": {chart_id: 4, order: 4, name: "Pressure"},
+        }
+        $.each(sensors, function(id, sensor) {
+            sensor.id = id;
+        });
+
+        var ordered_sensors = $.map(sensors, function(sensor) {
+            return sensor;
+        });
+        ordered_sensors.sort(function(a, b) {
+            return a.order - b.order;
+        });
+
+        function add_sensor_to_panel(panel, room, sensor, period_args, title) {
+            var url = "https://thingspeak.com/channels/" + rooms[room].toString() + "/charts/" + sensor.chart_id.toString() + "?" + $.param({
+                title: title || sensor.name,
+                width: "auto",
+            }) + "&" + period_args;
+
+            panel.append($("<iframe>", {
+                class: "chart",
+                src: url,
+            }));
+        }
+
+        function get_room_panel(room, period_args, panel) {
+            for(sensor of ordered_sensors)
+                add_sensor_to_panel(panel, room, sensor, period_args);
+        }
+
+        function on_room_panel(room, period_args) {
+            var channel_id = rooms[room];
+            get_room_panel(room, period_args, $("#" + room + "-panel"))
+        }
+
+        function on_all_rooms_panel(period_args) {
+            var panel = $("#all-rooms-panel");
+            var sensor_id = $("#sensor-switches input[name=sensor]:checked").attr("value");
+
+            $.each(rooms, function(room, channel_id) {
+                add_sensor_to_panel(panel, room, sensors[sensor_id], period_args, room);
+            });
+        }
+
+        function on_view_change() {
+            var room = $("#tab-bar a.is-active").attr("href").slice("#".length, -"-panel".length);
+            var period_args = $("#period-switches input[name=period]:checked").attr("value");
+
+            $("#all-rooms-panel").html("");
+            Object.keys(rooms).forEach(function(room) {
+                $("#" + room + "-panel").html("");
             });
 
-            var ordered_sensors = $.map(sensors, function(sensor) {
-                return sensor;
-            });
-            ordered_sensors.sort(function(a, b) {
-                return a.order - b.order;
-            });
-
-            function add_sensor_to_panel(panel, room, sensor, period_args, title) {
-                var url = "https://thingspeak.com/channels/" + rooms[room].toString() + "/charts/" + sensor.chart_id.toString() + "?" + $.param({
-                    title: title || sensor.name,
-                    width: "auto",
-                }) + "&" + period_args;
-
-                panel.append($("<iframe>", {
-                    class: "chart",
-                    src: url,
-                }));
+            if(rooms[room]) {
+                $("#sensor-switches").hide();
+                on_room_panel(room, period_args);
+            } else {
+                $("#sensor-switches").show();
+                on_all_rooms_panel(period_args);
             }
+        }
 
-            function get_room_panel(room, period_args, panel) {
-                for(sensor of ordered_sensors)
-                    add_sensor_to_panel(panel, room, sensor, period_args);
-            }
+        $(document).ready(function() {
+            $("#tab-bar a").on("click", on_view_change);
+            $("#sensor-switches input[name=sensor]").change(on_view_change);
+            $("#period-switches input[name=period]").change(on_view_change);
+            $("#tab-bar a")[0].click();
+        })
+    </script>
+</head>
 
-            function on_room_panel(room, period_args) {
-                var channel_id = rooms[room];
-                get_room_panel(room, period_args, $("#" + room + "-panel"))
-            }
-
-            function on_all_rooms_panel(period_args) {
-                var panel = $("#all-rooms-panel");
-                var sensor_id = $("#sensor-switches input[name=sensor]:checked").attr("value");
-
-                $.each(rooms, function(room, channel_id) {
-                    add_sensor_to_panel(panel, room, sensors[sensor_id], period_args, room);
-                });
-            }
-
-            function on_view_change() {
-                var room = $("#tab-bar a.is-active").attr("href").slice("#".length, -"-panel".length);
-                var period_args = $("#period-switches input[name=period]:checked").attr("value");
-
-                $("#all-rooms-panel").html("");
-                Object.keys(rooms).forEach(function(room) {
-                    $("#" + room + "-panel").html("");
-                });
-
-                if(rooms[room]) {
-                    $("#sensor-switches").hide();
-                    on_room_panel(room, period_args);
-                } else {
-                    $("#sensor-switches").show();
-                    on_all_rooms_panel(period_args);
-                }
-            }
-
-            $(document).ready(function() {
-                $("#tab-bar a").on("click", on_view_change);
-                $("#sensor-switches input[name=sensor]").change(on_view_change);
-                $("#period-switches input[name=period]").change(on_view_change);
-                $("#tab-bar a")[0].click();
-            })
-        </script>
-    </head>
-
-    <body>
-        <div class="mdl-tabs mdl-js-tabs mdl-js-ripple-effect">
-            <div class="mdl-tabs__tab-bar" id="tab-bar">
-                <a href="#all-rooms-panel" class="mdl-tabs__tab is-active">All rooms</a>
-                <a href="#kitchen-panel" class="mdl-tabs__tab">Kitchen</a>
-                <a href="#big-room-panel" class="mdl-tabs__tab">Big room</a>
-                <a href="#little-room-panel" class="mdl-tabs__tab">Little room</a>
-            </div>
-
-            <div>
-                <div class="switches" id="sensor-switches">
-                    <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="sensor-co2-concentration">
-                        <input type="radio" class="mdl-radio__button" name="sensor" id="sensor-co2-concentration" value="co2-concentration" checked>
-                        <span class="mdl-radio__label">CO2 concentration</span>
-                    </label>
-                    <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="sensor-humidity">
-                        <input type="radio" class="mdl-radio__button" name="sensor" id="sensor-humidity" value="humidity">
-                        <span class="mdl-radio__label">Humidity</span>
-                    </label>
-                    <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="sensor-temperature">
-                        <input type="radio" class="mdl-radio__button" name="sensor" id="sensor-temperature" value="temperature">
-                        <span class="mdl-radio__label">Temperature</span>
-                    </label>
-                    <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="sensor-pressure">
-                        <input type="radio" class="mdl-radio__button" name="sensor" id="sensor-pressure" value="pressure">
-                        <span class="mdl-radio__label">Pressure</span>
-                    </label>
-                </div>
-
-                <div class="switches" id="period-switches">
-                    <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="period-realtime">
-                        <input type="radio" class="mdl-radio__button" name="period" id="period-realtime" value="dynamic=true" checked>
-                        <span class="mdl-radio__label">Realtime</span>
-                    </label>
-                    <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="period-day">
-                        <input type="radio" class="mdl-radio__button" name="period" id="period-day" value="days=1">
-                        <span class="mdl-radio__label">Day</span>
-                    </label>
-                    <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="period-week">
-                        <input type="radio" class="mdl-radio__button" name="period" id="period-week" value="days=7">
-                        <span class="mdl-radio__label">Week</span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="mdl-tabs__panel" id="all-rooms-panel"></div>
-            <div class="mdl-tabs__panel" id="kitchen-panel"></div>
-            <div class="mdl-tabs__panel" id="big-room-panel"></div>
-            <div class="mdl-tabs__panel" id="little-room-panel"></div>
+<body>
+    <div class="mdl-tabs mdl-js-tabs mdl-js-ripple-effect">
+        <div class="mdl-tabs__tab-bar" id="tab-bar">
+            <a href="#all-rooms-panel" class="mdl-tabs__tab is-active">All rooms</a>
+            <a href="#kitchen-panel" class="mdl-tabs__tab">Kitchen</a>
+            <a href="#big-room-panel" class="mdl-tabs__tab">Big room</a>
+            <a href="#little-room-panel" class="mdl-tabs__tab">Little room</a>
         </div>
-    </body>
+
+        <div>
+            <div class="switches" id="sensor-switches">
+                <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="sensor-co2-concentration">
+                    <input type="radio" class="mdl-radio__button" name="sensor" id="sensor-co2-concentration" value="co2-concentration" checked>
+                    <span class="mdl-radio__label">CO2 concentration</span>
+                </label>
+                <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="sensor-humidity">
+                    <input type="radio" class="mdl-radio__button" name="sensor" id="sensor-humidity" value="humidity">
+                    <span class="mdl-radio__label">Humidity</span>
+                </label>
+                <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="sensor-temperature">
+                    <input type="radio" class="mdl-radio__button" name="sensor" id="sensor-temperature" value="temperature">
+                    <span class="mdl-radio__label">Temperature</span>
+                </label>
+                <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="sensor-pressure">
+                    <input type="radio" class="mdl-radio__button" name="sensor" id="sensor-pressure" value="pressure">
+                    <span class="mdl-radio__label">Pressure</span>
+                </label>
+            </div>
+
+            <div class="switches" id="period-switches">
+                <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="period-realtime">
+                    <input type="radio" class="mdl-radio__button" name="period" id="period-realtime" value="dynamic=true" checked>
+                    <span class="mdl-radio__label">Realtime</span>
+                </label>
+                <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="period-day">
+                    <input type="radio" class="mdl-radio__button" name="period" id="period-day" value="days=1">
+                    <span class="mdl-radio__label">Day</span>
+                </label>
+                <label class="mdl-radio mdl-js-radio mdl-js-ripple-effect" for="period-week">
+                    <input type="radio" class="mdl-radio__button" name="period" id="period-week" value="days=7">
+                    <span class="mdl-radio__label">Week</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="mdl-tabs__panel" id="all-rooms-panel"></div>
+        <div class="mdl-tabs__panel" id="kitchen-panel"></div>
+        <div class="mdl-tabs__panel" id="big-room-panel"></div>
+        <div class="mdl-tabs__panel" id="little-room-panel"></div>
+    </div>
+</body>
 </html>
