@@ -30,35 +30,21 @@
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
 
-    <script>
-        var rooms = {
-            "kitchen": 134669,
-            "big-room": 134669,
-            "little-room": 134669,
-        };
+    <script>(function() {
+        "use strict";
 
-        var sensors = {
-            "co2-concentration": {chart_id: 3, order: 1, name: "CO2 concentration"},
-            "humidity": {chart_id: 2, order: 2, name: "Humidity"},
-            "temperature": {chart_id: 1, order: 3, name: "Temperature"},
-            "pressure": {chart_id: 4, order: 4, name: "Pressure"},
+        function arrayToMap(array) {
+            var map = {};
+            for(var obj of array)
+                map[obj.id] = obj;
+            return map;
         }
-        $.each(sensors, function(id, sensor) {
-            sensor.id = id;
-        });
 
-        var ordered_sensors = $.map(sensors, function(sensor) {
-            return sensor;
-        });
-        ordered_sensors.sort(function(a, b) {
-            return a.order - b.order;
-        });
-
-        function add_sensor_to_panel(panel, room, sensor, period_args, title) {
-            var url = "https://thingspeak.com/channels/" + rooms[room].toString() + "/charts/" + sensor.chart_id.toString() + "?" + $.param({
+        function addSensorToPanel(panel, room, sensor, periodArgs, title) {
+            var url = "https://thingspeak.com/channels/" + room.channelId + "/charts/" + sensor.chartId + "?" + $.param({
                 title: title || sensor.name,
                 width: "auto",
-            }) + "&" + period_args;
+            }) + "&" + periodArgs;
 
             panel.append($("<iframe>", {
                 class: "chart",
@@ -66,52 +52,57 @@
             }));
         }
 
-        function get_room_panel(room, period_args, panel) {
-            for(sensor of ordered_sensors)
-                add_sensor_to_panel(panel, room, sensor, period_args);
-        }
+        function onViewChange() {
+            var panelId = $("#tab-bar").find("a.is-active").attr("href");
+            var roomId = panelId.slice("#".length, -"-panel".length);
+            var periodArgs = $("#period-switches").find("input[name=period]:checked").attr("value");
 
-        function on_room_panel(room, period_args) {
-            var channel_id = rooms[room];
-            get_room_panel(room, period_args, $("#" + room + "-panel"))
-        }
-
-        function on_all_rooms_panel(period_args) {
-            var panel = $("#all-rooms-panel");
-            var sensor_id = $("#sensor-switches input[name=sensor]:checked").attr("value");
-
-            $.each(rooms, function(room, channel_id) {
-                add_sensor_to_panel(panel, room, sensors[sensor_id], period_args, room);
-            });
-        }
-
-        function on_view_change() {
-            var room = $("#tab-bar a.is-active").attr("href").slice("#".length, -"-panel".length);
-            var period_args = $("#period-switches input[name=period]:checked").attr("value");
-
-            $("#all-rooms-panel").html("");
-            Object.keys(rooms).forEach(function(room) {
-                $("#" + room + "-panel").html("");
+            ["all-rooms"].concat(Object.keys(roomMap)).forEach(function(room_id) {
+                $("#" + room_id + "-panel").html("");
             });
 
-            if(rooms[room]) {
-                $("#sensor-switches").hide();
-                on_room_panel(room, period_args);
+            var panel = $(panelId);
+            var room = roomMap[roomId];
+            var sensorSwitches = $("#sensor-switches");
+
+            if(room === undefined) {
+                var sensorId = sensorSwitches.find("input[name=sensor]:checked").attr("value");
+
+                sensorSwitches.show();
+                for(room of rooms)
+                    addSensorToPanel(panel, room, sensorMap[sensorId], periodArgs, room.name);
             } else {
-                $("#sensor-switches").show();
-                on_all_rooms_panel(period_args);
+                sensorSwitches.hide();
+                for(var sensor of sensors)
+                    addSensorToPanel(panel, room, sensor, periodArgs);
             }
         }
 
-        $(document).ready(function() {
-            $("#tab-bar a").on("click", on_view_change);
-            $("#sensor-switches input[name=sensor]").change(on_view_change);
-            $("#period-switches input[name=period]").change(on_view_change);
-            $("#tab-bar a")[0].click();
-        })
-    </script>
-</head>
+        var rooms = [
+            // FIXME: channel IDs
+            {id: "kitchen", channelId: 134669, name: "Kitchen"},
+            {id: "big-room", channelId: 134669, name: "Big room"},
+            {id: "little-room", channelId: 134669, name: "Little room"},
+        ];
+        var roomMap = arrayToMap(rooms);
 
+        var sensors = [
+            {id: "co2-concentration", chartId: 3, name: "CO2 concentration"},
+            {id: "humidity", chartId: 2, name: "Humidity"},
+            {id: "temperature", chartId: 1, name: "Temperature"},
+            {id: "pressure", chartId: 4, name: "Pressure"},
+        ];
+        var sensorMap = arrayToMap(sensors);
+
+        $(document).ready(function() {
+            $("#tab-bar").find("a").on("click", onViewChange);
+            $("#sensor-switches").find("input[name=sensor]").change(onViewChange);
+            $("#period-switches").find("input[name=period]").change(onViewChange);
+
+            $("#tab-bar").find("a.is-active")[0].click();
+        });
+    }());</script>
+</head>
 <body>
     <div class="mdl-tabs mdl-js-tabs mdl-js-ripple-effect">
         <div class="mdl-tabs__tab-bar" id="tab-bar">
