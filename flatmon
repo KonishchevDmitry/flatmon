@@ -31,10 +31,11 @@ class Error(Exception):
 class Sensor:
     RATE_LIMIT_SECONDS = 15
 
-    def __init__(self, name, thingspeak, channel_id):
+    def __init__(self, name, thingspeak, channel_id, write_api_key):
         self.name = name
         self.__thingspeak = thingspeak
         self.__channel_id = channel_id
+        self.__write_api_key = write_api_key
         self.__channel_last_update_time = 0
         self.__sending_thread = None
 
@@ -74,7 +75,7 @@ class Sensor:
         request = dict(metrics, channel_id=self.__channel_id)
 
         try:
-            result = self.__thingspeak.send_request("update", request)
+            result = self.__thingspeak.send_request("update", request, self.__write_api_key)
 
             if result == 0:
                 (log.warning if first_update else log.error)(
@@ -94,9 +95,9 @@ class Sensor:
 
 class Thingspeak:
     def __init__(self, config):
-        self.__write_api_key = config["write_api_key"]
-        self.__sensors = {sensor_id: Sensor(sensor_info["name"], self, sensor_info["channel_id"])
-                          for sensor_id, sensor_info in config["sensors"].items()}
+        self.__sensors = {
+            sensor_id: Sensor(sensor_info["name"], self, sensor_info["channel_id"], sensor_info["write_api_key"])
+            for sensor_id, sensor_info in config["sensors"].items()}
 
     def __enter__(self):
         return self
@@ -115,9 +116,9 @@ class Thingspeak:
         log.info("Got metrics from '%s' sensor.", sensor.name)
         sensor.on_metrics(temperature, humidity, co2_concentration, pressure)
 
-    def send_request(self, method, request):
+    def send_request(self, method, request, api_key):
         response = requests.post("https://api.thingspeak.com/{}.json".format(method), headers={
-            "THINGSPEAKAPIKEY": self.__write_api_key,
+            "THINGSPEAKAPIKEY": api_key,
         }, json=request, timeout=5)
 
         if response.status_code != requests.codes.ok:
@@ -209,10 +210,10 @@ def load_config(path):
                 "device": String(min_length=1),
             }),
             "thingspeak": DictScheme({
-                "write_api_key": String(min_length=1),
                 "sensors": Dict(Integer(min=0), DictScheme({
                     "name": String(min_length=1),
                     "channel_id": Integer(min=0),
+                    "write_api_key": String(min_length=1),
                 })),
             })
         }))
