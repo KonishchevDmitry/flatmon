@@ -96,11 +96,14 @@
         var sensorMap = arrayToMap(sensors);
 
         $(document).ready(function() {
-            $("#tab-bar").find("a").on("click", onViewChange);
+            $("#tab-bar").find("a").on("click", function() {
+                setTimeout(onViewChange, 0);
+            });
+
             $("#sensor-switches").find("input[name=sensor]").change(onViewChange);
             $("#period-switches").find("input[name=period]").change(onViewChange);
 
-            $("#tab-bar").find("a.is-active")[0].click();
+            onViewChange();
         });
     }());</script>
 </head>
@@ -149,7 +152,7 @@
             </div>
         </div>
 
-        <div class="mdl-tabs__panel" id="all-rooms-panel"></div>
+        <div class="mdl-tabs__panel is-active" id="all-rooms-panel"></div>
         <div class="mdl-tabs__panel" id="kitchen-panel"></div>
         <div class="mdl-tabs__panel" id="big-room-panel"></div>
         <div class="mdl-tabs__panel" id="little-room-panel"></div>
