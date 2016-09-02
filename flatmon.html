@@ -43,6 +43,8 @@
         function addSensorToPanel(panel, room, sensor, periodArgs, title) {
             var url = "https://thingspeak.com/channels/" + room.channelId + "/charts/" + sensor.chartId + "?" + $.param({
                 title: title || sensor.name,
+                xaxis: "",
+                yaxis: "",
                 width: "auto",
             }) + "&" + periodArgs;
 
@@ -79,10 +81,9 @@
         }
 
         var rooms = [
-            // FIXME: channel IDs
             {id: "kitchen", channelId: 134669, name: "Kitchen"},
-            {id: "big-room", channelId: 134669, name: "Big room"},
-            {id: "little-room", channelId: 134669, name: "Little room"},
+            {id: "big-room", channelId: 153778, name: "Big room"},
+            {id: "little-room", channelId: 153780, name: "Little room"},
         ];
         var roomMap = arrayToMap(rooms);
 
