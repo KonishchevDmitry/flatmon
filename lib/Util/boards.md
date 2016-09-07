@@ -4,7 +4,7 @@
 
 **Uno:** 0, 1
 
-**Mega:** 0, 1, 14 - 19
+**Mega:** 0, 1, 14, 15, 16, 17, 18, 19
 
 
 ## PWM and timers
@@ -17,7 +17,7 @@ Uno has 3 timers and 6 PWM outputs:
 Mega has 6 timers and 15 PWM outputs:
 - Pins 4 and 13: controlled by Timer0
 - Pins 11 and 12: controlled by Timer1
-- Pins 9 and10: controlled by Timer2
+- Pins 9 and 10: controlled by Timer2
 - Pin 2, 3 and 5: controlled by Timer3
 - Pin 6, 7 and 8: controlled by Timer4
 - Pin 46, 45 and 44: controlled by Timer5
