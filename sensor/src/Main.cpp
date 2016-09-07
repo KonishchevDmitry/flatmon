@@ -22,25 +22,34 @@ using Util::Logging::log;
 
 // DHT22 connection notes:
 // One 100nF capacitor should be added between VDD and GND for wave filtering.
-const int DHT_22_SENSOR_PIN = 12;
+#if ARDUINO_AVR_MEGA2560
+    const int DHT_22_SENSOR_PIN = 28;
+#else
+    const int DHT_22_SENSOR_PIN = 12;
+#endif
 
 // MH-Z19 connection notes:
 // Vin - 5V
 // HD - 3.3V
 // RX/TX should be connected to Arduino pins through 5V -> 3.3V logic level shifter
-#if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
-    // AltSoftSerial always uses these pins and breaks PWM on the following pins because of timer usage:
-    //
-    //    Board      TX  RX   Timer  Unusable PWM
-    // Arduino Uno    9   8  Timer1            10
-    // Arduino Mega  46  48  Timer5        44, 45
-    #include <AltSoftSerial.h>
-    AltSoftSerial SOFTWARE_SERIAL;
-
-    const int CO2_SENSOR_RX_PIN = 9;
-    const int CO2_SENSOR_TX_PIN = 8;
+#if ARDUINO_AVR_MEGA2560
+    HardwareSerial* CO2_SENSOR_SERIAL = &Serial3;
 #else
-    const int CO2_SENSOR_PWM_PIN = 2;
+    #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
+        // AltSoftSerial always uses these pins and breaks PWM on the following pins because of timer usage:
+        //
+        //    Board      TX  RX   Timer  Unusable PWM
+        // Arduino Uno    9   8  Timer1            10
+        // Arduino Mega  46  48  Timer5        44, 45
+        #include <AltSoftSerial.h>
+        AltSoftSerial SOFTWARE_SERIAL;
+        AltSoftSerial* CO2_SENSOR_SERIAL = &SOFTWARE_SERIAL;
+
+        const int CO2_SENSOR_RX_PIN = 9;
+        const int CO2_SENSOR_TX_PIN = 8;
+    #else
+        const int CO2_SENSOR_PWM_PIN = 2;
+    #endif
 #endif
 
 // BMP180 connection notes:
@@ -50,31 +59,56 @@ const int DHT_22_SENSOR_PIN = 12;
 // SCL: Uno - A5, Mega - 21
 
 const int LIGHT_SENSOR_PIN = A0;
-const int LED_BRIGHTNESS_CONTROLLING_PIN = 5;
+#if ARDUINO_AVR_MEGA2560
+    const int LED_BRIGHTNESS_CONTROLLING_PIN = 8;
+#else
+    const int LED_BRIGHTNESS_CONTROLLING_PIN = 5;
+#endif
 
-const int SHIFT_REGISTER_DATA_PIN = 6; // SER
-const int SHIFT_REGISTER_CLOCK_PIN = 4; // SRCLK
-const int SHIFT_REGISTER_LATCH_PIN = 3; // RCLK
+#if ARDUINO_AVR_MEGA2560
+    const int SHIFT_REGISTER_DATA_PIN = A3; // SER
+    const int SHIFT_REGISTER_CLOCK_PIN = A2; // SRCLK
+    const int SHIFT_REGISTER_LATCH_PIN = A1; // RCLK
+#else
+    const int SHIFT_REGISTER_DATA_PIN = 6; // SER
+    const int SHIFT_REGISTER_CLOCK_PIN = 4; // SRCLK
+    const int SHIFT_REGISTER_LATCH_PIN = 3; // RCLK
+#endif
 
 // Use of tone() function breaks PWM on the following pins because of Timer2 usage:
 //
 //    Board      Unusable PWM
 // Arduino Uno          3, 11
 // Arduino Mega         9, 10
-const int BUZZER_PIN = 11;
+#if ARDUINO_AVR_MEGA2560
+    const int BUZZER_PIN = 10;
+#else
+    const int BUZZER_PIN = 11;
+#endif
 
 // LCD connection:
 // VSS - GND
 // VDD - 5V
 // VO (Contrast) - using voltage devider: 5V - 10K - V0 - 1K - GND
-const int LCD_RS_PIN = A1;
-// RW - GND
-const int LCD_E_PIN = A2;
-// D0-D3 - not connected
-const int LCD_D4_PIN = A3;
-const int LCD_D5_PIN = 10;
-const int LCD_D6_PIN = 8;
-const int LCD_D7_PIN = 7;
+#if ARDUINO_AVR_MEGA2560
+    const int LCD_RS_PIN = 27;
+    // RW - GND
+    const int LCD_E_PIN = 26;
+    // D0-D3 - not connected
+    const int LCD_D4_PIN = 25;
+    const int LCD_D5_PIN = 24;
+    const int LCD_D6_PIN = 23;
+    const int LCD_D7_PIN = 22;
+#else
+    const int LCD_RS_PIN = A1;
+    // RW - GND
+    const int LCD_E_PIN = A2;
+    // D0-D3 - not connected
+    const int LCD_D4_PIN = A3;
+    const int LCD_D5_PIN = 10;
+    const int LCD_D6_PIN = 8;
+    const int LCD_D7_PIN = 7;
+#endif
 // A (LED+ has internal resistor) - 5V
 // K (LED-) - GND
 Display LCD(LCD_RS_PIN, LCD_E_PIN, LCD_D4_PIN, LCD_D5_PIN, LCD_D6_PIN, LCD_D7_PIN);
@@ -88,8 +122,14 @@ Display LCD(LCD_RS_PIN, LCD_E_PIN, LCD_D4_PIN, LCD_D5_PIN, LCD_D6_PIN, LCD_D7_PI
     //    Board       Timer  Unusable PWM
     // Arduino Uno   Timer1         9, 10
     // Arduino Mega  Timer1        11, 12
+
     const int TRANSMITTER_SPEED = 1000;
-    const int TRANSMITTER_TX_PIN = 9;
+
+    #if ARDUINO_AVR_MEGA2560
+        const int TRANSMITTER_TX_PIN = 47;
+    #else
+        const int TRANSMITTER_TX_PIN = 9;
+    #endif
 
     RH_ASK_TRANSMITTER TRANSMITTER(TRANSMITTER_SPEED, TRANSMITTER_TX_PIN);
 #endif
@@ -179,8 +219,8 @@ void setup() {
     Dht22 dht22(DHT_22_SENSOR_PIN, &scheduler, &temperatureLeds, &humidityLeds, &LCD);
 
     LedGroup co2Leds(&leds, 8, 4);
-    #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
-        Co2UartSensor co2Sensor(&SOFTWARE_SERIAL, &scheduler, &co2Leds, &LCD, &buzzer);
+    #if ARDUINO_AVR_MEGA2560 || CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
+        Co2UartSensor co2Sensor(CO2_SENSOR_SERIAL, &scheduler, &co2Leds, &LCD, &buzzer);
     #else
         Co2PwmSensor co2Sensor(CO2_SENSOR_PWM_PIN, &scheduler, &co2Leds, &LCD, &buzzer);
     #endif
