@@ -41,12 +41,12 @@ using Util::Logging::log;
         //    Board      TX  RX   Timer  Unusable PWM
         // Arduino Uno    9   8  Timer1            10
         // Arduino Mega  46  48  Timer5        44, 45
+        const int CO2_SENSOR_RX_PIN = 9;
+        const int CO2_SENSOR_TX_PIN = 8;
+
         #include <AltSoftSerial.h>
         AltSoftSerial SOFTWARE_SERIAL;
         AltSoftSerial* CO2_SENSOR_SERIAL = &SOFTWARE_SERIAL;
-
-        const int CO2_SENSOR_RX_PIN = 9;
-        const int CO2_SENSOR_TX_PIN = 8;
     #else
         const int CO2_SENSOR_PWM_PIN = 2;
     #endif
