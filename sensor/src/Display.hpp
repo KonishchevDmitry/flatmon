@@ -15,7 +15,7 @@ class Display {
         };
 
     public:
-        Display(uint8_t rsPin, uint8_t ePin, uint8_t d4Pin, uint8_t d5Pin, uint8_t d6Pin, uint8_t d7pin);
+        Display(uint8_t rsPin, uint8_t ePin, uint8_t d4Pin, uint8_t d5Pin, uint8_t d6Pin, uint8_t d7Pin);
 
     public:
         void setTemperature(int8_t temperature);
