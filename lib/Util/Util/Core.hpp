@@ -17,6 +17,8 @@ typedef unsigned long TimeMillis;
 // Type which is used to store time in microseconds.
 typedef unsigned long TimeMicros;
 
+#define UTIL_ARRAY_SIZE(array) (sizeof(array) / sizeof(*(array)))
+
 #ifdef ARDUINO
     // A pointer returned by F() macro.
     typedef __FlashStringHelper FlashChar;

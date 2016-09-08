@@ -62,12 +62,13 @@ using Util::Logging::log;
 // * SCL: Uno - A5, Mega - 21
 
 const int LIGHT_SENSOR_PIN = A0;
-#if ARDUINO_AVR_MEGA2560
-    // FIXME: 6, 8
-    const int LED_BRIGHTNESS_CONTROLLING_PIN = 6;
-#else
-    const int LED_BRIGHTNESS_CONTROLLING_PIN = 5;
-#endif
+const uint8_t LED_BRIGHTNESS_CONTROLLING_PINS[] = {
+    #if ARDUINO_AVR_MEGA2560
+        6, 8
+    #else
+        5
+    #endif
+};
 
 // Shift register connection:
 // VCC - 5V
@@ -227,7 +228,8 @@ void setup() {
     Buzzer buzzer(&scheduler, BUZZER_PIN);
 
     ShiftRegisterLeds leds(SHIFT_REGISTER_DATA_PIN, SHIFT_REGISTER_CLOCK_PIN, SHIFT_REGISTER_LATCH_PIN);
-    LedBrightnessRegulator ledBrightnessRegulator(LIGHT_SENSOR_PIN, LED_BRIGHTNESS_CONTROLLING_PIN, &scheduler);
+    LedBrightnessRegulator ledBrightnessRegulator(
+        LIGHT_SENSOR_PIN, LED_BRIGHTNESS_CONTROLLING_PINS, UTIL_ARRAY_SIZE(LED_BRIGHTNESS_CONTROLLING_PINS), &scheduler);
 
     LedGroup temperatureLeds(&leds, 0, 4);
     LedGroup humidityLeds(&leds, 4, 4);

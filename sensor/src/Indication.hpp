@@ -56,14 +56,17 @@ class LedProgressTask: public Util::Task {
 
 class LedBrightnessRegulator: public Util::Task {
     public:
-        LedBrightnessRegulator(uint8_t lightSensorPin, const uint8_t transistorBasePin, Util::TaskScheduler* scheduler);
+        LedBrightnessRegulator(
+            uint8_t lightSensorPin, const uint8_t* transistorBasePins, uint8_t transistorBasePinsNum,
+            Util::TaskScheduler* scheduler);
 
     public:
         virtual void execute();
 
     private:
         uint8_t lightSensorPin_;
-        uint8_t transistorBasePin_;
+        const uint8_t* transistorBasePins_;
+        uint8_t transistorBasePinsNum_;
     #if UTIL_ENABLE_LOGGING
         TimeMillis lastLogTime_;
     #endif
