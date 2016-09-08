@@ -23,7 +23,7 @@ using Util::Logging::log;
 // DHT22 connection notes:
 // One 100nF capacitor should be added between VDD and GND for wave filtering.
 #if ARDUINO_AVR_MEGA2560
-    const int DHT_22_SENSOR_PIN = 28;
+    const int DHT_22_SENSOR_PIN = 29;
 #else
     const int DHT_22_SENSOR_PIN = 12;
 #endif
@@ -53,26 +53,41 @@ using Util::Logging::log;
 #endif
 
 // BMP180 connection notes:
+//
 // VIN: 3.3V
 // GND: GND
-// SDA: Uno - A4, Mega - 20
-// SCL: Uno - A5, Mega - 21
+//
+// Via bi-directional logic level converter:
+// * SDA: Uno - A4, Mega - 20
+// * SCL: Uno - A5, Mega - 21
 
 const int LIGHT_SENSOR_PIN = A0;
 #if ARDUINO_AVR_MEGA2560
-    const int LED_BRIGHTNESS_CONTROLLING_PIN = 8;
+    // FIXME: 6, 8
+    const int LED_BRIGHTNESS_CONTROLLING_PIN = 6;
 #else
     const int LED_BRIGHTNESS_CONTROLLING_PIN = 5;
 #endif
 
+// Shift register connection:
+// VCC - 5V
+// QA - first light
+// SER - for first shift register see pin below, for second shift register - QH' of the first shift register
+// OE - GND
+// RCLK - see pin below (common for both shift registers)
+// SRCLK - see pin below (common for both shift registers)
+// SRCLR - 5V
+// QH' - SER of next shift register
+// QB-QH - leds
+// GND - GND
 #if ARDUINO_AVR_MEGA2560
     const int SHIFT_REGISTER_DATA_PIN = A3; // SER
-    const int SHIFT_REGISTER_CLOCK_PIN = A2; // SRCLK
-    const int SHIFT_REGISTER_LATCH_PIN = A1; // RCLK
+    const int SHIFT_REGISTER_LATCH_PIN = A2; // RCLK
+    const int SHIFT_REGISTER_CLOCK_PIN = A1; // SRCLK
 #else
     const int SHIFT_REGISTER_DATA_PIN = 6; // SER
-    const int SHIFT_REGISTER_CLOCK_PIN = 4; // SRCLK
     const int SHIFT_REGISTER_LATCH_PIN = 3; // RCLK
+    const int SHIFT_REGISTER_CLOCK_PIN = 4; // SRCLK
 #endif
 
 // Use of tone() function breaks PWM on the following pins because of Timer2 usage:
