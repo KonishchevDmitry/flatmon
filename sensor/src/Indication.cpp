@@ -77,6 +77,11 @@ void LedProgressTask::execute() {
     this->scheduleAfter(100);
 }
 
+void LedProgressTask::pause() {
+    Task::pause();
+    curLedNum_ = 0;
+}
+
 
 LedBrightnessRegulator::LedBrightnessRegulator(
     uint8_t lightSensorPin, const uint8_t* transistorBasePins, uint8_t transistorBasePinsNum,
@@ -92,12 +97,9 @@ LedBrightnessRegulator::LedBrightnessRegulator(
     for(uint8_t pinId = 0; pinId < transistorBasePinsNum_; pinId++) {
         auto pin = transistorBasePins_[pinId];
         pinMode(pin, OUTPUT);
-        // FIXME
         analogWrite(pin, 1);
-        // analogWrite(pin, 255);
     }
 
-    // FIXME
     scheduler->addTask(this);
 }
 
@@ -123,7 +125,10 @@ void LedBrightnessRegulator::execute() {
     double y = A * pow(M_E, B * x);
 
     uint8_t pwmValue = constrain(y, Constants::PWM_LOW + 1, Constants::PWM_HIGH);
+    // FIXME
+    pwmValue = 10;
 
+    // FIXME: remember the value
     for(uint8_t pinId = 0; pinId < transistorBasePinsNum_; pinId++)
         analogWrite(transistorBasePins_[pinId], pwmValue);
 

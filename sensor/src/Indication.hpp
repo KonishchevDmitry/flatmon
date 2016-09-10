@@ -48,6 +48,7 @@ class LedProgressTask: public Util::Task {
 
     public:
         virtual void execute();
+        void pause();
 
     private:
         LedGroup* ledGroup_;
