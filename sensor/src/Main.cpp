@@ -61,7 +61,9 @@ using Util::Logging::log;
 // * SDA: Uno - A4, Mega - 20
 // * SCL: Uno - A5, Mega - 21
 
+// 5V - 10K - sensor pin - light-dependent resistor - GND
 const int LIGHT_SENSOR_PIN = A0;
+
 const uint8_t LED_BRIGHTNESS_CONTROLLING_PINS[] = {
     #if ARDUINO_AVR_MEGA2560
         6, // Comfort LEDs
