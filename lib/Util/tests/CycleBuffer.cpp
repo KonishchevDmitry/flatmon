@@ -77,3 +77,29 @@ BOOST_AUTO_TEST_CASE(add_and_median) {
     BOOST_REQUIRE_EQUAL(buffer.size(), 5);
     BOOST_REQUIRE_EQUAL(buffer.median(), 3);
 }
+
+BOOST_AUTO_TEST_CASE(get) {
+    TestCycleBuffer<int, 5> buffer;
+
+    buffer.add(10);
+    buffer.add(20);
+    buffer.add(30);
+    buffer.add(40);
+    buffer.add(50);
+
+    BOOST_REQUIRE_EQUAL(buffer.size(), 5);
+    BOOST_REQUIRE_EQUAL(buffer[0], 10);
+    BOOST_REQUIRE_EQUAL(buffer[1], 20);
+    BOOST_REQUIRE_EQUAL(buffer[2], 30);
+    BOOST_REQUIRE_EQUAL(buffer[3], 40);
+    BOOST_REQUIRE_EQUAL(buffer[4], 50);
+
+    buffer.add(60);
+
+    BOOST_REQUIRE_EQUAL(buffer.size(), 5);
+    BOOST_REQUIRE_EQUAL(buffer[0], 20);
+    BOOST_REQUIRE_EQUAL(buffer[1], 30);
+    BOOST_REQUIRE_EQUAL(buffer[2], 40);
+    BOOST_REQUIRE_EQUAL(buffer[3], 50);
+    BOOST_REQUIRE_EQUAL(buffer[4], 60);
+}

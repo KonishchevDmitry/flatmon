@@ -24,7 +24,7 @@ class CycleBuffer {
                 start_ = (start_ + 1) % capacity();
             }
 
-            items_[(start_ + size_ - 1) % capacity()] = value;
+            (*this)[size_ - 1] = value;
         }
 
         size_t capacity() const {
@@ -41,6 +41,10 @@ class CycleBuffer {
 
         bool full() const {
             return size() == capacity();
+        }
+
+        ValueType& operator[](size_t pos) {
+            return items_[(start_ + pos) % capacity()];
         }
 
     protected:
