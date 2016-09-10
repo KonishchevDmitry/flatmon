@@ -87,6 +87,14 @@ void Task::scheduleAfter(MonotonicTime::Time time) {
     scheduledAt_ = MonotonicTime::now() + time;
 }
 
+void Task::incrementScheduledTime(MonotonicTime::Time time) {
+    scheduledAt_ += time;
+
+    auto now = MonotonicTime::now();
+    if(scheduledAt_ < now)
+        scheduledAt_ = now;
+}
+
 bool Task::isTimedOut(MonotonicTime::Time time) {
     auto now = MonotonicTime::now();
     return now >= scheduledAt_ && now - scheduledAt_ >= time;

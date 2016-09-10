@@ -2,6 +2,7 @@
 #define Indication_hpp
 
 #include <Util/Core.hpp>
+#include <Util/CycleBuffer.hpp>
 #include <Util/TaskScheduler.hpp>
 
 struct ShiftRegisterLeds {
@@ -66,8 +67,13 @@ class LedBrightnessRegulator: public Util::Task {
 
     private:
         uint8_t lightSensorPin_;
+
         const uint8_t* transistorBasePins_;
         uint8_t transistorBasePinsNum_;
+
+        uint8_t pwmValue_;
+        Util::CycleBuffer<uint8_t, 10> pwmValues_;
+
     #if UTIL_ENABLE_LOGGING
         TimeMillis lastLogTime_;
     #endif
