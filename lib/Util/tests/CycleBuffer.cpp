@@ -5,10 +5,10 @@
 
 #include <Util/CycleBuffer.hpp>
 
-using Util::CycleBuffer;
+using Util::NumericCycleBuffer;
 
 template<typename T, size_t N>
-struct TestCycleBuffer: CycleBuffer<T, N> {
+struct TestCycleBuffer: NumericCycleBuffer<T, N> {
     TestCycleBuffer() {
         this->start_ = 2;
     }

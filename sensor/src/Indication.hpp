@@ -72,7 +72,7 @@ class LedBrightnessRegulator: public Util::Task {
         uint8_t transistorBasePinsNum_;
 
         uint8_t pwmValue_;
-        Util::CycleBuffer<uint8_t, 10> pwmValues_;
+        Util::NumericCycleBuffer<uint8_t, 10> pwmValues_;
 
     #if UTIL_ENABLE_LOGGING
         TimeMillis lastLogTime_;
