@@ -83,6 +83,7 @@ void Co2Sensor::onComfort(Comfort comfort) {
 
     if(comfort == Comfort::unknown) {
         if(changed) {
+            comfort_ = comfort;
             warningLevelStartTime_ = MonotonicTime();
             ledProgress_.resume();
         }
