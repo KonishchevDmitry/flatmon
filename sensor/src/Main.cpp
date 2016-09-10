@@ -64,7 +64,8 @@ using Util::Logging::log;
 const int LIGHT_SENSOR_PIN = A0;
 const uint8_t LED_BRIGHTNESS_CONTROLLING_PINS[] = {
     #if ARDUINO_AVR_MEGA2560
-        6, 8
+        6, // Comfort LEDs
+        8, // LCD
     #else
         5
     #endif
@@ -231,18 +232,18 @@ void setup() {
     LedBrightnessRegulator ledBrightnessRegulator(
         LIGHT_SENSOR_PIN, LED_BRIGHTNESS_CONTROLLING_PINS, UTIL_ARRAY_SIZE(LED_BRIGHTNESS_CONTROLLING_PINS), &scheduler);
 
-    LedGroup temperatureLeds(&leds, 0, 4);
-    LedGroup humidityLeds(&leds, 4, 4);
+    LedGroup temperatureLeds(&leds, 4, 4);
+    LedGroup humidityLeds(&leds, 0, 4);
     Dht22 dht22(DHT_22_SENSOR_PIN, &scheduler, &temperatureLeds, &humidityLeds, &LCD);
 
-    LedGroup co2Leds(&leds, 8, 4);
+    LedGroup co2Leds(&leds, 12, 4);
     #if ARDUINO_AVR_MEGA2560 || CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
         Co2UartSensor co2Sensor(CO2_SENSOR_SERIAL, &scheduler, &co2Leds, &LCD, &buzzer);
     #else
         Co2PwmSensor co2Sensor(CO2_SENSOR_PWM_PIN, &scheduler, &co2Leds, &LCD, &buzzer);
     #endif
 
-    LedGroup pressureLeds(&leds, 12, 4);
+    LedGroup pressureLeds(&leds, 8, 4);
     PressureSensor pressureSensor(&scheduler, &pressureLeds, &LCD);
 
     #if CONFIG_ENABLE_TRANSMITTER
