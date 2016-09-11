@@ -126,7 +126,7 @@ void LedBrightnessRegulator::execute() {
     pwmValues_.add(constrain(y, Constants::PWM_LOW + 1, Constants::PWM_HIGH));
 
     if(pwmValues_.full()) {
-        uint8_t pwmValue = pwmValues_.median();
+        uint8_t pwmValue = pwmValues_.maxValue();
 
         if(pwmValue != pwmValue_) {
             pwmValue_ = pwmValue;
