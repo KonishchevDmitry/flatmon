@@ -1,4 +1,3 @@
-#if 1
 #include <RH_ASK.h>
 
 #include <Util.h>
@@ -80,38 +79,6 @@ void setup() {
             message->co2Concentration, ",", message->pressure, ",", checksum);
     }
 }
-// FIXME
-#else
-#include <Util.h>
-#include <Util/Assertion.hpp>
-#include <Util/Constants.hpp>
-#include <Util/Logging.hpp>
-
-using Util::Logging::log;
-
-// AltSoftSerial always uses these pins and breaks PWM on the following pins because of timer usage:
-//
-//    Board      TX  RX   Timer  Unusable PWM
-// Arduino Uno    9   8  Timer1            10
-// Arduino Mega  46  48  Timer5        44, 45
-#include <AltSoftSerial.h>
-AltSoftSerial SOFTWARE_SERIAL;
-
-void setup() {
-    Util::Core::init();
-    Util::Logging::init();
-    SOFTWARE_SERIAL.begin(9600);
-    while(true) {
-        log(">");
-        SOFTWARE_SERIAL.print("AT+NAMEflatmon\r\n");
-        // log(SOFTWARE_SERIAL.available());
-        // SOFTWARE_SERIAL.print("ping\n");
-        delay(5000);
-        while(SOFTWARE_SERIAL.available())
-            Serial.write(SOFTWARE_SERIAL.read());
-    }
-}
-#endif
 
 void loop() {
     UTIL_LOGICAL_ERROR();
