@@ -58,7 +58,6 @@ class NumericCycleBuffer: public CycleBuffer<T, N> {
     public:
         using typename CycleBuffer<T, N>::ValueType;
 
-        // Calculates median of the items
         ValueType median() {
             UTIL_ASSERT(!this->empty());
 
@@ -80,6 +79,21 @@ class NumericCycleBuffer: public CycleBuffer<T, N> {
                 return itemsCopy[this->size_ / 2];
             else
                 return (itemsCopy[this->size_ / 2] + itemsCopy[this->size_ / 2 - 1]) / 2;
+        }
+
+        ValueType maxValue() {
+            UTIL_ASSERT(!this->empty());
+
+            size_t size = this->size_;
+            ValueType maxValue = (*this)[0];
+
+            for(size_t pos = 1; pos < size; pos++) {
+                ValueType value = (*this)[pos];
+                if(value > maxValue)
+                    maxValue = value;
+            }
+
+            return maxValue;
         }
 };
 
