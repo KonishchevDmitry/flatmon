@@ -341,8 +341,9 @@ void Co2UartSensor::onReadConcentration() {
     this->requestStartTime_ = millis();
     this->state_ = State::reading;
 
-    constexpr size_t dataSize = sizeof getGasConcentrationCommand + sizeof response_;
-    constexpr float dataSpeed = float(this->SERIAL_SPEED) / 8 / Constants::SECOND_MILLIS;
+    // Data is encoded as: Start bit + 8 bits of payload + Stop bit
+    constexpr size_t dataSize = (sizeof getGasConcentrationCommand + sizeof response_) * 10;
+    constexpr double dataSpeed = double(this->SERIAL_SPEED) / Constants::SECOND_MILLIS;
     constexpr TimeMillis minRequestTime = dataSize / dataSpeed;
 
     this->requestTimeout_ = 2 * minRequestTime;

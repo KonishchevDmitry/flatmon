@@ -98,7 +98,7 @@ void Dht22::execute() {
 void Dht22::onStartReading() {
     digitalWrite(dataPin_, LOW);
     this->state_ = State::reading;
-    this->scheduleAfter(10);
+    this->scheduleAfter(2);
 }
 
 void Dht22::onReading() {
@@ -300,7 +300,7 @@ bool Dht22::receiveData(uint16_t* data, uint8_t size) {
 
 bool Dht22::waitForLogicLevel(bool level, TimeMicros timeout) {
     TimeMicros startTime = micros();
-    timeout += 10; // DHT22 + measuring precision
+    timeout += 15; // DHT22 + measuring precision
 
     do {
         if(digitalRead(dataPin_) == level)
