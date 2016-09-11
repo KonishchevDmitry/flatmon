@@ -22,22 +22,20 @@ enum class Dht22::HumidityComfort: uint8_t {unknown, high, normal, low, very_low
 static const char* HUMIDITY_COMFORT_NAMES[] = {"unknown", "high", "normal", "low", "very-low"};
 
 namespace {
-    constexpr auto POLLING_PERIOD = 10 * Constants::SECOND_MILLIS;
-    constexpr auto COLLECTION_PERIOD = 2 * Constants::SECOND_MILLIS;
+    const auto POLLING_PERIOD = 10 * Constants::SECOND_MILLIS;
+    const auto COLLECTION_PERIOD = 2 * Constants::SECOND_MILLIS;
 
-    // FIXME: Alter the values
     TemperatureComfort getTemperatureComfort(int8_t temperature) {
-        if(temperature <= 18)
+        if(temperature <= 20)
             return TemperatureComfort::cold;
-        else if(temperature <= 24)
-            return TemperatureComfort::normal;
         else if(temperature <= 26)
+            return TemperatureComfort::normal;
+        else if(temperature <= 28)
             return TemperatureComfort::warm;
         else
             return TemperatureComfort::hot;
     }
 
-    // FIXME: Alter the values
     HumidityComfort getHumidityComfort(uint8_t humidity) {
         if(humidity <= 30)
             return HumidityComfort::very_low;
