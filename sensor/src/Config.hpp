@@ -1,8 +1,8 @@
 #ifndef Config_hpp
 #define Config_hpp
 
-#ifndef CONFIG_DEBUG_MODE
-    #define CONFIG_DEBUG_MODE 0
+#ifndef CONFIG_DEVELOP_MODE
+    #define CONFIG_DEVELOP_MODE 0
 #endif
 
 #define CONFIG_ENABLE_TRANSMITTER 1

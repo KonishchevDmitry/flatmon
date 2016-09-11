@@ -21,7 +21,7 @@ namespace {
     // It shouldn't be polled more often then once in 10 seconds via UART because in that case it returns strange
     // results.
     const auto POLLING_PERIOD = 10 * Constants::SECOND_MILLIS;
-    const auto PREHEAT_TIME = CONFIG_DEBUG_MODE ? POLLING_PERIOD : 3 * Constants::MINUTE_MILLIS;
+    const auto PREHEAT_TIME = CONFIG_DEVELOP_MODE ? POLLING_PERIOD : 3 * Constants::MINUTE_MILLIS;
 
     Comfort getComfort(Concentration concentration) {
         // CO2 levels explained:
