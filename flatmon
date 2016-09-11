@@ -187,9 +187,9 @@ class Monitor:
         temperature = temperature or None
         humidity = humidity or None
         co2_concentration = co2_concentration or None
-        pressure = pressure or None
+        pressure = pressure / 10 or None
 
-        log.info("Temperature: %s, humidity: %s, CO2 concentration: %s, pressure: %s.",
+        log.info("Temperature: %s, humidity: %s, CO2 concentration: %s, pressure: %.1f.",
                  temperature, humidity, co2_concentration, pressure)
 
         self.__thingspeak.on_sensor_metrics(sensor_id, temperature, humidity, co2_concentration, pressure)
