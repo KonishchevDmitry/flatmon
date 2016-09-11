@@ -44,7 +44,8 @@ void Transmitter::execute() {
         temperature: temperature,
         humidity: humidity,
         co2Concentration: co2Concentration,
-        pressure: pressure,
+        // FIXME
+        pressure: pressure / 10,
     };
 
     if(message.temperature != temperature)
@@ -53,9 +54,10 @@ void Transmitter::execute() {
         message.humidity = 0;
     if(message.co2Concentration != co2Concentration)
         message.co2Concentration = 0;
-    if(message.pressure != pressure)
+    // FIXME
+    if(message.pressure != pressure / 10)
         message.pressure = 0;
 
     transmitter_->send(reinterpret_cast<const uint8_t*>(&message), sizeof message);
-    this->scheduleAfter(Constants::SECOND_MILLIS);
+    this->scheduleAfter(10 * Constants::SECOND_MILLIS);
 }

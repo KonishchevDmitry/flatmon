@@ -2,6 +2,7 @@
 #define PressureSensor_hpp
 
 #include <Util/Core.hpp>
+#include <Util/CycleBuffer.hpp>
 #include <Util/TaskScheduler.hpp>
 
 #include <SFE_BMP180.h>
@@ -15,6 +16,7 @@ class PressureSensor: public Util::Task {
 
     private:
         enum class State: uint8_t;
+        struct PressureHistory {uint16_t min; uint16_t max;};
         typedef void (PressureSensor::* StateHandler)();
 
     public:
@@ -26,7 +28,7 @@ class PressureSensor: public Util::Task {
 
     private:
         void onInitialize();
-        void onStartTemperatureReading();
+        void onStartReading();
         void onReadTemperature();
         void onReadPressure();
         void onError(const FlashChar* error);
@@ -41,6 +43,9 @@ class PressureSensor: public Util::Task {
         double temperature_;
         uint16_t pressure_;
         Comfort comfort_;
+
+        TimeMillis curHourStartTime_;
+        Util::CycleBuffer<PressureHistory, 24> pressureHistory_;
 
         LedGroup* ledGroup_;
         LedProgressTask ledProgress_;

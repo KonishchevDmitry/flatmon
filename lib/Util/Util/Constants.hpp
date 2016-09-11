@@ -15,6 +15,7 @@ constexpr int ANALOG_HIGH = 1023;
 
 constexpr TimeMillis SECOND_MILLIS = 1000;
 constexpr TimeMillis MINUTE_MILLIS = 60 * SECOND_MILLIS;
+constexpr TimeMillis HOUR_MILLIS = 60 * MINUTE_MILLIS;
 
 }}
 

@@ -7,25 +7,37 @@
 using Util::Logging::log;
 namespace Constants = Util::Constants;
 
-enum class PressureSensor::State: uint8_t {initialize, start_temperature_reading, read_temperature, read_pressure};
+enum class PressureSensor::State: uint8_t {initialize, start_reading, read_temperature, read_pressure};
 PressureSensor::StateHandler PressureSensor::stateHandlers_[] = {
     &PressureSensor::onInitialize,
-    &PressureSensor::onStartTemperatureReading,
+    &PressureSensor::onStartReading,
     &PressureSensor::onReadTemperature,
     &PressureSensor::onReadPressure,
 };
 
-enum class PressureSensor::Comfort: uint8_t {unknown, normal};
-static const char* COMFORT_NAMES[] = {"unknown", "normal"};
+typedef PressureSensor::Comfort Comfort;
+enum class PressureSensor::Comfort: uint8_t {unknown, normal, warning, high, critical};
+static const char* COMFORT_NAMES[] = {"unknown", "normal", "warning", "high", "critical"};
 
 namespace {
     constexpr auto STARTUP_TIME = 20;
     constexpr auto POLLING_PERIOD = 10 * Constants::SECOND_MILLIS;
+
+    Comfort getComfort(uint16_t dispersion) {
+        if(dispersion < 60)
+            return Comfort::normal;
+        else if(dispersion < 75)
+            return Comfort::warning;
+        else if(dispersion < 100)
+            return Comfort::high;
+        else
+            return Comfort::critical;
+    }
 }
 
 PressureSensor::PressureSensor(Util::TaskScheduler* scheduler, LedGroup* ledGroup, Display* display)
-: state_(State::initialize), pressure_(0), comfort_(Comfort::unknown), ledGroup_(ledGroup), ledProgress_(ledGroup),
-  display_(display) {
+: state_(State::initialize), pressure_(0), comfort_(Comfort::unknown),
+  ledGroup_(ledGroup), ledProgress_(ledGroup), display_(display) {
     scheduler->addTask(&ledProgress_);
     scheduler->addTask(this);
     this->scheduleAfter(STARTUP_TIME);
@@ -46,18 +58,30 @@ void PressureSensor::execute() {
 }
 
 void PressureSensor::onInitialize() {
-    if(barometer_.begin())
-        this->state_ = State::start_temperature_reading;
-    else
-        this->onError(F("Failed to initialize the barometer device"));
+    if(!barometer_.begin())
+        return this->onError(F("Failed to initialize the barometer device"));
+
+    curHourStartTime_ = millis();
+    pressureHistory_.add({min: 0, max: 0});
+
+    state_ = State::start_reading;
 }
 
-void PressureSensor::onStartTemperatureReading() {
+void PressureSensor::onStartReading() {
+    TimeMillis timeSinceHourStartTime = millis() - curHourStartTime_;
+
+    if(timeSinceHourStartTime >= Constants::HOUR_MILLIS) {
+        UTIL_ASSERT(timeSinceHourStartTime < 2 * Constants::HOUR_MILLIS);
+        log(F("Close pressure history collection for the current hour."));
+        curHourStartTime_ += Constants::HOUR_MILLIS;
+        pressureHistory_.add({min: 0, max: 0});
+    }
+
     TimeMillis waitTime = barometer_.startTemperature();
     if(!waitTime)
         return this->onError(F("Failed to begin temperature reading from the barometer"));
 
-    this->state_ = State::read_temperature;
+    state_ = State::read_temperature;
     this->scheduleAfter(waitTime);
 }
 
@@ -69,27 +93,50 @@ void PressureSensor::onReadTemperature() {
     if(!waitTime)
         return this->onError(F("Failed to begin pressure reading from the barometer"));
 
-    this->state_ = State::read_pressure;
+    state_ = State::read_pressure;
     this->scheduleAfter(waitTime);
 }
 
 void PressureSensor::onReadPressure() {
-    double pressure;
-    if(!barometer_.getPressure(pressure, temperature_))
+    double mbarPressure;
+    if(!barometer_.getPressure(mbarPressure, temperature_))
         return this->onError(F("Failed to read pressure from the barometer"));
 
-    pressure_ = lround(pressure * 0.75006375541921);
-    log(F("Pressure: "), pressure_, F(" mmHg."));
+    pressure_ = lround(mbarPressure * 0.75006375541921 * 10);
+    PressureHistory* hourHistory = &pressureHistory_[pressureHistory_.size() - 1];
 
-    // FIXME
-    uint8_t dispersion = 0;
+    uint16_t minPressure;
+    if(hourHistory->min && pressure_ >= hourHistory->min)
+        minPressure = hourHistory->min;
+    else
+        minPressure = hourHistory->min = pressure_;
+
+    uint16_t maxPressure;
+    if(hourHistory->max && pressure_ <= hourHistory->max)
+        maxPressure = hourHistory->max;
+    else
+        maxPressure = hourHistory->max = pressure_;
+
+    for(size_t hour = 0; hour < pressureHistory_.size() - 1; hour++) {
+        PressureHistory* hourHistory = &pressureHistory_[hour];
+        if(hourHistory->min && hourHistory->min < minPressure)
+            minPressure = hourHistory->min;
+        if(hourHistory->max && hourHistory->max > maxPressure)
+            maxPressure = hourHistory->max;
+    }
+
+    uint16_t dispersion = maxPressure - minPressure;
+    Comfort comfort = getComfort(dispersion);
+
+    log(F("Pressure: "), pressure_ / 10, F("."), pressure_ % 10, F("/"), dispersion / 10, F("."), dispersion % 10,
+        F(" mmHg ("), COMFORT_NAMES[int(comfort)], F(")."));
+
     if(display_)
         display_->setPressure(pressure_, dispersion);
 
-    // FIXME
-    this->onComfort(Comfort::normal);
+    this->onComfort(comfort);
 
-    this->state_ = State::start_temperature_reading;
+    state_ = State::start_reading;
     this->scheduleAfter(POLLING_PERIOD);
 }
 
@@ -102,8 +149,8 @@ void PressureSensor::onError(const FlashChar *error) {
     pressure_ = 0;
     this->onComfort(Comfort::unknown);
 
-    if(this->state_ != State::initialize)
-        this->state_ = State::start_temperature_reading;
+    if(state_ != State::initialize)
+        state_ = State::start_reading;
 
     this->scheduleAfter(POLLING_PERIOD);
 }

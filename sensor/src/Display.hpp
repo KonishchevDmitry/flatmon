@@ -27,7 +27,7 @@ class Display {
         void setCo2Concentration(uint16_t co2Concentration);
         void resetCo2Concentration(bool force = false);
 
-        void setPressure(uint16_t pressure, uint8_t dispersion);
+        void setPressure(uint16_t pressure, uint16_t dispersion);
         void resetPressure(bool force = false);
 
         void showAssertionError(

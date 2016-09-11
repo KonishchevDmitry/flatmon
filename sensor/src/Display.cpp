@@ -27,7 +27,7 @@ namespace {
     const uint8_t TEMPERATURE_BLOCK_COL = HUMIDITY_BLOCK_COL - TEMPERATURE_BLOCK_SIZE;
 
 
-    const char PRESSURE_NO_DATA_TEXT[] = "???\xfd?? mmHg";
+    const char PRESSURE_NO_DATA_TEXT[] = "???.?\xfd??.? mmHg";
     const size_t PRESSURE_BLOCK_SIZE = sizeof PRESSURE_NO_DATA_TEXT - 1;
 
     const uint8_t PRESSURE_BLOCK_ROW = 1;
@@ -108,12 +108,17 @@ void Display::resetCo2Concentration(bool force) {
     }
 }
 
-void Display::setPressure(uint16_t pressure, uint8_t dispersion) {
+void Display::setPressure(uint16_t pressure, uint16_t dispersion) {
     if(this->hasData(DataType::pressure) && pressure_ == pressure && pressureDispersion_ == dispersion)
         return;
 
     char buf[PRESSURE_BLOCK_SIZE + 1];
-    size_t dataSize = snprintf(buf, sizeof buf, "%3hu\xfd%02hhu mmHg", pressure, dispersion);
+    const char* format = dispersion >= 100
+        ? "%3hu.%1hu\xfd%02hu.%1hu mmHg"
+        : "%4hu.%1hu\xfd%01hu.%1hu mmHg";
+
+    size_t dataSize = snprintf(buf, sizeof buf, format,
+                               pressure / 10, pressure % 10, dispersion / 10, dispersion % 10);
     if(dataSize != sizeof buf - 1)
         return this->resetPressure();
 
