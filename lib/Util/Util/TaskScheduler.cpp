@@ -3,10 +3,15 @@
 #endif
 
 #include "Core.hpp"
+#include "Logging.hpp"
 #include "MonotonicTime.hpp"
 #include "TaskScheduler.hpp"
 
+#define UTIL_TASK_SCHEDULER_ENABLE_PROFILING 0 // Max task execution time in microseconds
+
 namespace Util {
+
+using Logging::log_critical;
 
 TaskScheduler::TaskScheduler()
 : tasks_(nullptr), executing_task_(nullptr), executing_task_next_(nullptr) {
@@ -48,9 +53,20 @@ void TaskScheduler::run() {
                 task = task->next();
             } else {
                 // Attention: Tasks may be added/removed during task execution
-
                 executing_task_ = task;
+
+            #if UTIL_TASK_SCHEDULER_ENABLE_PROFILING
+                TimeMicros executionStartTime = micros();
+            #endif
                 task->execute();
+            #if UTIL_TASK_SCHEDULER_ENABLE_PROFILING
+                TimeMicros executionTime = micros() - executionStartTime;
+                if(executionTime > UTIL_TASK_SCHEDULER_ENABLE_PROFILING) {
+                    // Use critical severity here to be able to profile tasks under all log levels
+                    log_critical(task->getName(), F(" task has executed too long: "), executionTime, F("."));
+                }
+            #endif
+
                 executed = true;
 
                 if(executing_task_) {

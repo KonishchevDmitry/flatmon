@@ -33,6 +33,7 @@ class Task: public LinkedNodeList<Task> {
         ~Task();
 
     public:
+        virtual const FlashChar* getName() = 0;
         virtual void execute() = 0;
         void scheduleAfter(MonotonicTime::Time time);
         void incrementScheduledTime(MonotonicTime::Time time);
