@@ -162,7 +162,7 @@ class Monitor:
 
     def __read_message(self, receiver):
         line = receiver.readline(1024).rstrip(b"\r\n")
-        sensor_message_prefix = b"> "
+        sensor_message_prefix = b"I: > "
 
         if line.startswith(sensor_message_prefix):
             self.__on_sensor_message(line[len(sensor_message_prefix):])
