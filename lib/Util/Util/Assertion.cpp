@@ -3,7 +3,7 @@
 
 #ifdef ARDUINO
     #include "Logging.hpp"
-    using Util::Logging::log;
+    using Util::Logging::log_critical;
 #endif
 
 namespace Util { namespace Assertion {
@@ -20,16 +20,16 @@ namespace Util { namespace Assertion {
     #ifdef ARDUINO
         #if UTIL_VERBOSE_ASSERTS
             if(error)
-                log(F("Assertion error at "), file, F(":"), line, F(": "), error);
+                log_critical(F("Assertion error at "), file, F(":"), line, F(": "), error);
             else
-                log(F("Assertion error at "), file, F(":"), line, F("."));
+                log_critical(F("Assertion error at "), file, F(":"), line, F("."));
 
-            log(F("Stopping the device."));
+            log_critical(F("Stopping the device."));
 
             if(ABORT_HANDLER)
                 ABORT_HANDLER(file, line);
         #else
-            log(F("Assertion error. Stopping the device."));
+            log_critical(F("Assertion error. Stopping the device."));
 
             if(ABORT_HANDLER)
                 ABORT_HANDLER();
