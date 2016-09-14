@@ -24,6 +24,7 @@ class Dht22: public Util::Task {
         bool getTemperature(int8_t* temperature) const;
         bool getHumidity(uint8_t* humidity) const;
 
+        virtual const FlashChar* getName() { return F("DHT22 sensor"); }
         virtual void execute();
 
     private:

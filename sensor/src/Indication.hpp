@@ -3,6 +3,7 @@
 
 #include <Util/Core.hpp>
 #include <Util/CycleBuffer.hpp>
+#include <Util/Logging.hpp>
 #include <Util/TaskScheduler.hpp>
 
 struct ShiftRegisterLeds {
@@ -48,6 +49,7 @@ class LedProgressTask: public Util::Task {
         LedProgressTask(LedGroup* ledGroup);
 
     public:
+        virtual const FlashChar* getName() { return F("LED progress"); }
         virtual void execute();
         void pause();
 
@@ -78,6 +80,7 @@ class LedBrightnessRegulator: public Util::Task {
             Util::TaskScheduler* scheduler);
 
     public:
+        virtual const FlashChar* getName() { return F("LED brightness"); }
         virtual void execute();
 
     private:
@@ -91,7 +94,7 @@ class LedBrightnessRegulator: public Util::Task {
 
         Util::NumericCycleBuffer<uint16_t, 50> brightnessHistory_;
 
-    #if UTIL_ENABLE_LOGGING
+    #if UTIL_LOG_LEVEL >= UTIL_LOG_LEVEL_DEBUG
         TimeMillis lastLogTime_;
     #endif
 };

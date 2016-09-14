@@ -13,6 +13,7 @@ class Buzzer: public Util::Task {
         Buzzer(Util::TaskScheduler* scheduler, uint8_t pin);
 
     public:
+        virtual const FlashChar* getName() { return F("Buzzer"); }
         virtual void execute();
         void notify();
 

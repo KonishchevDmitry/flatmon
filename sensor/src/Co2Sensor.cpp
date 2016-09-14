@@ -6,7 +6,9 @@
 #include "Co2Sensor.hpp"
 #include "Config.hpp"
 
-using Util::Logging::log;
+using Util::Logging::log_error;
+using Util::Logging::log_info;
+using Util::Logging::log_debug;
 using Util::MonotonicTime;
 namespace Constants = Util::Constants;
 
@@ -64,7 +66,7 @@ void Co2Sensor::onConcentration(Concentration concentration) {
     concentration_ = concentration;
 
     Comfort comfort = getComfort(concentration_);
-    log(F("CO2 ("), this->getName(), F("): "), concentration_, F(" ppm ("), COMFORT_NAMES_[int(comfort)], F(")."));
+    log_info(F("CO2 ("), this->getMode(), F("): "), concentration_, F(" ppm ("), COMFORT_NAMES_[int(comfort)], F(")."));
 
     if(display_)
         display_->setCo2Concentration(concentration);
@@ -249,11 +251,12 @@ void Co2PwmSensor::acquireCurrentStatus(Status* status, Concentration* concentra
     const char* statusName = STATUS_NAMES_[int(*status)];
 
     if(*status == Status::ok || *status == Status::timing_error) {
-        log(F("CO2 PWM sensor profiling: "), statusName,
+        log_debug(
+            F("CO2 PWM sensor profiling: "), statusName,
             F(". Logic level durations: "), profilingData.highLevelDuration, F(" + "), profilingData.lowLevelDuration,
             F(" = "), profilingData.highLevelDuration + profilingData.lowLevelDuration, F("."));
     } else {
-        log(F("CO2 PWM sensor profiling: "), statusName, F("."));
+        log_debug(F("CO2 PWM sensor profiling: "), statusName, F("."));
     }
 #endif
 }
@@ -286,14 +289,14 @@ void Co2PwmSensor::execute() {
     if(status == Status::ok) {
         this->onConcentration(concentration);
     } else {
-        log(F("Error while reading CO2 concentration using PWM: "), STATUS_NAMES_[int(status)], F("."));
+        log_error(F("Error while reading CO2 concentration using PWM: "), STATUS_NAMES_[int(status)], F("."));
         this->onError();
     }
 
     this->scheduleAfter(POLLING_PERIOD);
 }
 
-const char* Co2PwmSensor::getName() {
+const char* Co2PwmSensor::getMode() {
     return "PWM";
 }
 
@@ -320,7 +323,7 @@ void Co2UartSensor::execute() {
     }
 }
 
-const char* Co2UartSensor::getName() {
+const char* Co2UartSensor::getMode() {
     return "UART";
 }
 
@@ -363,7 +366,7 @@ void Co2UartSensor::onReadingConcentration() {
 
     if(receivedBytes_ < responseSize) {
         if(millis() - this->requestStartTime_ >= this->requestTimeout_) {
-            log(F("CO2 sensor has timed out."));
+            log_error(F("CO2 sensor has timed out."));
             return this->onCommunicationError();
         }
 
@@ -376,7 +379,7 @@ void Co2UartSensor::onReadingConcentration() {
     checksum = byte(0xFF) - checksum + 1;
 
     if(response_[0] != 0xFF || response_[responseSize - 1] != checksum || response_[1] != 0x86) {
-        log(F("CO2 sensor response validation error."));
+        log_error(F("CO2 sensor response validation error."));
         return this->onCommunicationError();
     }
 

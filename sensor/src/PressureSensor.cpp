@@ -4,7 +4,9 @@
 
 #include "PressureSensor.hpp"
 
-using Util::Logging::log;
+using Util::Logging::log_error;
+using Util::Logging::log_info;
+using Util::Logging::log_debug;
 namespace Constants = Util::Constants;
 
 enum class PressureSensor::State: uint8_t {initialize, start_reading, read_temperature, read_pressure};
@@ -72,7 +74,7 @@ void PressureSensor::onStartReading() {
 
     if(timeSinceHourStartTime >= Constants::HOUR_MILLIS) {
         UTIL_ASSERT(timeSinceHourStartTime < 2 * Constants::HOUR_MILLIS);
-        log(F("Close pressure history collection for the current hour."));
+        log_debug(F("Close pressure history collection for the current hour."));
         curHourStartTime_ += Constants::HOUR_MILLIS;
         pressureHistory_.add({min: 0, max: 0});
     }
@@ -128,8 +130,8 @@ void PressureSensor::onReadPressure() {
     uint16_t dispersion = maxPressure - minPressure;
     Comfort comfort = getComfort(dispersion);
 
-    log(F("Pressure: "), pressure_ / 10, F("."), pressure_ % 10, F("/"), dispersion / 10, F("."), dispersion % 10,
-        F(" mmHg ("), COMFORT_NAMES[int(comfort)], F(")."));
+    log_info(F("Pressure: "), pressure_ / 10, F("."), pressure_ % 10, F("/"), dispersion / 10, F("."), dispersion % 10,
+             F(" mmHg ("), COMFORT_NAMES[int(comfort)], F(")."));
 
     if(display_)
         display_->setPressure(pressure_, dispersion);
@@ -141,7 +143,7 @@ void PressureSensor::onReadPressure() {
 }
 
 void PressureSensor::onError(const FlashChar *error) {
-    log(error, F(": I2C error code #"), int(barometer_.getError()), F("."));
+    log_error(error, F(": I2C error code #"), int(barometer_.getError()), F("."));
 
     if(display_)
         display_->resetPressure();

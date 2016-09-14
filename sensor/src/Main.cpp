@@ -18,7 +18,8 @@
 #include "Indication.hpp"
 #include "PressureSensor.hpp"
 
-using Util::Logging::log;
+using Util::Logging::log_critical;
+using Util::Logging::log_info;
 namespace Constants = Util::Constants;
 
 // DHT22 connection notes:
@@ -198,6 +199,7 @@ class WdtResetter: public Util::Task {
         }
 
     public:
+        virtual const FlashChar* getName() { return F("WDT resetter"); }
         virtual void execute() {
             wdt_reset();
             this->scheduleAfter(10);
@@ -219,20 +221,24 @@ void abortHandler(
 void initialize() {
     size_t freeMemorySize = Util::Core::getStackFreeMemorySize();
     UTIL_ASSERT(freeMemorySize > 100, F("Failed to start: Not enough memory."));
-    log(F("Free memory size: "), freeMemorySize, F(" bytes."));
+    log_info(F("Free memory size: "), freeMemorySize, F(" bytes."));
 
     if(EEPROM[SYSTEM_RESET_REASON_FLAG_ADDRESS]) {
         EEPROM[SYSTEM_RESET_REASON_FLAG_ADDRESS] = 0;
-        log(F("System lockup detected."));
+        log_critical(F("System lockup detected."));
         LCD.showSystemLockupError();
         Util::Core::stopDevice();
     }
 
     wdt_enable(
-    #if UTIL_ENABLE_LOGGING
-        WDTO_120MS
-    #else
+    #if UTIL_LOG_LEVEL == UTIL_LOG_LEVEL_DISABLED
         WDTO_15MS
+    #elif UTIL_LOG_LEVEL < UTIL_LOG_LEVEL_INFO
+        WDTO_30MS
+    #elif UTIL_LOG_LEVEL < UTIL_LOG_LEVEL_DEBUG
+        WDTO_60MS
+    #else
+        WDTO_120MS
     #endif
     );
     WDTCSR |= _BV(WDIE);
@@ -252,9 +258,9 @@ void setup() {
     wdt_disable();
 
     Util::Core::init();
-    Util::Logging::init();
+    Util::Logging::init(115200);
 
-    log(F("Initializing..."));
+    log_info(F("Initializing..."));
     Util::Assertion::setAbortHandler(abortHandler);
 
     Util::TaskScheduler scheduler;
@@ -296,7 +302,7 @@ void setup() {
     #endif
 
     initialize();
-    log(F("The system has been initialized. Starting the device."));
+    log_info(F("The system has been initialized. Starting the device."));
     scheduler.run();
 }
 

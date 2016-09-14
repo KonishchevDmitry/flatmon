@@ -7,8 +7,7 @@
 #include "Config.hpp"
 #include "Transmitter.hpp"
 
-using Util::Logging::log;
-using Util::Logging::vlog;
+using Util::Logging::log_debug;
 using Common::SensorMessage;
 namespace Constants = Util::Constants;
 
@@ -22,7 +21,7 @@ Transmitter::Transmitter(RH_ASK* transmitter, Util::TaskScheduler* scheduler,
 }
 
 void Transmitter::execute() {
-    log(F("Sending sensor data..."));
+    log_debug(F("Sending sensor data..."));
 
     uint8_t temperature = 0;
     int8_t signedTemperature;

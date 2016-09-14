@@ -24,6 +24,8 @@ class PressureSensor: public Util::Task {
 
     public:
         bool getPressure(uint16_t* pressure) const;
+
+        virtual const FlashChar* getName() { return F("Pressure sensor"); }
         virtual void execute();
 
     private:

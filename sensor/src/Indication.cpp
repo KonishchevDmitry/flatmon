@@ -7,7 +7,7 @@
 
 namespace Constants = Util::Constants;
 
-using Util::Logging::log;
+using Util::Logging::log_debug;
 
 ShiftRegisterLeds::ShiftRegisterLeds(uint8_t dataPin, uint8_t clockPin, uint8_t latchPin)
 : dataPin_(dataPin), clockPin_(clockPin), latchPin_(latchPin), value_(0) {
@@ -103,7 +103,7 @@ LedBrightnessRegulator::LedBrightnessRegulator(
     uint8_t lightSensorPin, LedBrightnessController** controllers, uint8_t controllersNum,
     Util::TaskScheduler* scheduler
 ): lightSensorPin_(lightSensorPin), controllersNum_(controllersNum), controllers_(controllers)
-#if UTIL_ENABLE_LOGGING
+#if UTIL_LOG_LEVEL >= UTIL_LOG_LEVEL_DEBUG
     , lastLogTime_(0)
 #endif
 {
@@ -125,10 +125,10 @@ void LedBrightnessRegulator::measureBrightness() {
     uint16_t brightness = Constants::ANALOG_HIGH - analogRead(lightSensorPin_);
     brightnessHistory_.add(brightness);
 
-    #if UTIL_ENABLE_LOGGING
+    #if UTIL_LOG_LEVEL >= UTIL_LOG_LEVEL_DEBUG
         auto curTime = millis();
         if(curTime - lastLogTime_ >= 5 * Constants::SECOND_MILLIS) {
-            log(F("Brightness: "), brightness, F("."));
+            log_debug(F("Brightness: "), brightness, F("."));
             lastLogTime_ = curTime;
         }
     #endif

@@ -5,10 +5,11 @@
 #include "Dht22.hpp"
 
 #define DHT22_ENABLE_PROFILING 0
-#define DHT22_ENABLE_VERBOSE_PROFILING DHT22_ENABLE_PROFILING && UTIL_LOG_VERBOSITY > 0
+#define DHT22_ENABLE_VERBOSE_PROFILING 0
 
-using Util::Logging::log;
-using Util::Logging::vlog;
+using Util::Logging::log_error;
+using Util::Logging::log_info;
+using Util::Logging::log_debug;
 namespace Constants = Util::Constants;
 
 enum class Dht22::State: uint8_t {start_reading, reading};
@@ -112,7 +113,7 @@ void Dht22::onReading() {
     pinMode(dataPin_, INPUT);
 
     if(digitalRead(dataPin_) != LOW) {
-        log(F("Failed to receive response from DHT22 on our 'start reading' signal."));
+        log_error(F("Failed to receive response from DHT22 on our 'start reading' signal."));
         return this->onError();
     }
 
@@ -121,7 +122,7 @@ void Dht22::onReading() {
     #endif
 
     if(!this->waitForLogicLevel(HIGH, 80)) {
-        log(F("Failed to receive 'prepare to receive data' signal from DHT22."));
+        log_error(F("Failed to receive 'prepare to receive data' signal from DHT22."));
         return this->onError();
     }
 
@@ -130,7 +131,7 @@ void Dht22::onReading() {
     #endif
 
     if(!this->waitForLogicLevel(LOW, 80)) {
-        log(F("Failed to receive 'start data transmission' signal from DHT22."));
+        log_error(F("Failed to receive 'start data transmission' signal from DHT22."));
         return this->onError();
     }
 
@@ -145,9 +146,9 @@ void Dht22::onReading() {
     #if DHT22_ENABLE_PROFILING
         TimeMicros readingEndTime = micros();
 
-        log(F("DHT22 low level duration: "), highLevelStartTime - lowLevelStartTime, F("."));
-        log(F("DHT22 high level duration: "), transmissionStartTime - highLevelStartTime, F("."));
-        log(F("DHT22 total reading time: "), readingEndTime - readingStartTime, F("."));
+        log_debug(F("DHT22 low level duration: "), highLevelStartTime - lowLevelStartTime, F("."));
+        log_debug(F("DHT22 high level duration: "), transmissionStartTime - highLevelStartTime, F("."));
+        log_debug(F("DHT22 total reading time: "), readingEndTime - readingStartTime, F("."));
     #endif
 
     uint8_t payloadChecksum = 0;
@@ -155,7 +156,7 @@ void Dht22::onReading() {
         payloadChecksum += reinterpret_cast<uint8_t*>(payload)[byteId];
 
     if(payloadChecksum != checksum) {
-        log(F("Got a corrupted message from DHT22: checksum mismatch."));
+        log_error(F("Got a corrupted message from DHT22: checksum mismatch."));
         return this->onError();
     }
 
@@ -172,8 +173,8 @@ void Dht22::onReading() {
     temperature_ = lroundf(float(encodedTemperature) / 10);
     TemperatureComfort temperatureComfort = getTemperatureComfort(temperature_);
 
-    log(F("Humidity: "), humidity_, F("% ("), HUMIDITY_COMFORT_NAMES[int(humidityComfort)], F(")."));
-    log(F("Temperature: "), temperature_, F("C ("), TEMPERATURE_COMFORT_NAMES[int(temperatureComfort)], F(")."));
+    log_info(F("Humidity: "), humidity_, F("% ("), HUMIDITY_COMFORT_NAMES[int(humidityComfort)], F(")."));
+    log_info(F("Temperature: "), temperature_, F("C ("), TEMPERATURE_COMFORT_NAMES[int(temperatureComfort)], F(")."));
 
     if(display_) {
         display_->setHumidity(humidity_);
@@ -249,14 +250,14 @@ bool Dht22::receiveData(uint16_t* data, uint8_t size) {
         #endif
 
         if(!this->waitForLogicLevel(HIGH, 50)) {
-            log(F("Failed to receive 'bit data' signal from DHT22."));
+            log_error(F("Failed to receive 'bit data' signal from DHT22."));
             return false;
         }
 
         TimeMicros bitStartTime = micros();
 
         if(!this->waitForLogicLevel(LOW, 70)) {
-            log(F("Failed to receive 'end of bit data' signal from DHT22."));
+            log_error(F("Failed to receive 'end of bit data' signal from DHT22."));
             return false;
         }
 
@@ -284,14 +285,14 @@ bool Dht22::receiveData(uint16_t* data, uint8_t size) {
             bufPos += snprintf(durationsBuf + bufPos, sizeof durationsBuf - bufPos, " %ld", transmissionSignalDuration);
             UTIL_ASSERT(bufPos < sizeof durationsBuf);
         }
-        vlog(F("DHT22 transmission signal durations:"), durationsBuf);
+        log_debug(F("DHT22 transmission signal durations:"), durationsBuf);
 
         bufPos = 0;
         for(TimeMicros bitDuration : bitDurations) {
             bufPos += snprintf(durationsBuf + bufPos, sizeof durationsBuf - bufPos, " %ld", bitDuration);
             UTIL_ASSERT(bufPos < sizeof durationsBuf);
         }
-        vlog(F("DHT22 bit durations:"), durationsBuf);
+        log_debug(F("DHT22 bit durations:"), durationsBuf);
     }
     #endif
 

@@ -33,7 +33,8 @@ class Co2Sensor: public Util::Task {
         bool getConcentration(Concentration* concentration) const;
 
     protected:
-        virtual const char* getName() = 0;
+        virtual const FlashChar* getName() { return F("CO2 sensor"); }
+        virtual const char* getMode() = 0;
         void onConcentration(Concentration concentration);
         void onError();
 
@@ -71,7 +72,7 @@ class Co2PwmSensor: public Co2Sensor {
         virtual void execute();
 
     protected:
-        virtual const char* getName();
+        virtual const char* getMode();
 
     private:
         static void init(uint8_t pwmPin);
@@ -111,7 +112,7 @@ class Co2UartSensor: public Co2Sensor {
         virtual void execute();
 
     protected:
-        virtual const char* getName();
+        virtual const char* getMode();
 
     private:
         void onReadConcentration();

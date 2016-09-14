@@ -16,6 +16,7 @@ class Transmitter: public Util::Task {
                     const Dht22* dht22, const Co2Sensor* co2Sensor, PressureSensor* pressureSensor);
 
     public:
+        virtual const FlashChar* getName() { return F("Transmitter"); }
         virtual void execute();
 
     private:
