@@ -56,23 +56,40 @@ class LedProgressTask: public Util::Task {
         uint8_t curLedNum_;
 };
 
+class LedBrightnessController {
+    public:
+        LedBrightnessController(uint8_t transistorBasePin);
+
+    public:
+        void onBrightness(uint16_t brightness);
+
+    protected:
+        virtual uint8_t getPwmValue(uint16_t brightness) = 0;
+
+    private:
+        uint8_t pwmPin_;
+        uint8_t pwmValue_;
+};
+
 class LedBrightnessRegulator: public Util::Task {
     public:
         LedBrightnessRegulator(
-            uint8_t lightSensorPin, const uint8_t* transistorBasePins, uint8_t transistorBasePinsNum,
+            uint8_t lightSensorPin, LedBrightnessController** controllers, uint8_t controllersNum,
             Util::TaskScheduler* scheduler);
 
     public:
         virtual void execute();
 
     private:
+        void measureBrightness();
+
+    private:
         uint8_t lightSensorPin_;
 
-        const uint8_t* transistorBasePins_;
-        uint8_t transistorBasePinsNum_;
+        uint8_t controllersNum_;
+        LedBrightnessController** controllers_;
 
-        uint8_t pwmValue_;
-        Util::NumericCycleBuffer<uint8_t, 100> pwmValues_;
+        Util::NumericCycleBuffer<uint16_t, 50> brightnessHistory_;
 
     #if UTIL_ENABLE_LOGGING
         TimeMillis lastLogTime_;

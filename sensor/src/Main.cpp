@@ -19,6 +19,7 @@
 #include "PressureSensor.hpp"
 
 using Util::Logging::log;
+namespace Constants = Util::Constants;
 
 // DHT22 connection notes:
 // One 100nF capacitor should be added between VDD and GND for wave filtering.
@@ -64,14 +65,12 @@ using Util::Logging::log;
 // 5V - 10K - sensor pin - light-dependent resistor - GND
 const int LIGHT_SENSOR_PIN = A0;
 
-const uint8_t LED_BRIGHTNESS_CONTROLLING_PINS[] = {
-    #if ARDUINO_AVR_MEGA2560
-        6, // Comfort LEDs
-        8, // LCD
-    #else
-        5
-    #endif
-};
+#if ARDUINO_AVR_MEGA2560
+    const int LCD_BRIGHTNESS_CONTROLLING_PIN = 8;
+    const int COMFORT_LEDS_BRIGHTNESS_CONTROLLING_PIN = 6;
+#else
+    const int LCD_BRIGHTNESS_CONTROLLING_PIN = 5;
+#endif
 
 // Shift register connection:
 // VCC - 5V
@@ -154,6 +153,39 @@ Display LCD(LCD_RS_PIN, LCD_E_PIN, LCD_D4_PIN, LCD_D5_PIN, LCD_D6_PIN, LCD_D7_PI
 #endif
 
 
+class ComfortLedsBrightnessController: public LedBrightnessController {
+    public:
+        ComfortLedsBrightnessController(uint8_t transistorBasePin): LedBrightnessController(transistorBasePin) {
+        }
+
+    protected:
+        virtual uint8_t getPwmValue(uint16_t brightness) {
+            // e-Exponential regression calculated by http://keisan.casio.com/exec/system/14059930754231
+            // using the following data (determined experimentally):
+            // 700 5
+            // 800 10
+            // 1000 100
+            double A = 0.705156848;
+            double B = 0.00396581331;
+            double x = brightness;
+            double y = A * pow(M_E, B * x);
+            return constrain(y, Constants::PWM_LOW + 1, Constants::PWM_HIGH);
+        };
+};
+
+class LcdBrightnessController: public ComfortLedsBrightnessController {
+    public:
+        LcdBrightnessController(uint8_t transistorBasePin): ComfortLedsBrightnessController(transistorBasePin) {
+        }
+
+    protected:
+        // FIXME: Generate custom regression for LCD brightness
+        virtual uint8_t getPwmValue(uint16_t brightness) {
+            uint16_t pwmValue = ComfortLedsBrightnessController::getPwmValue(brightness);
+            return constrain(pwmValue + 10, Constants::PWM_LOW + 1, Constants::PWM_HIGH);
+        };
+};
+
 // EEPROM address where system reset reason is stored:
 // 0 - ordinary reset
 // 1 - reset by watchdog timer
@@ -230,9 +262,20 @@ void setup() {
 
     Buzzer buzzer(&scheduler, BUZZER_PIN);
 
-    ShiftRegisterLeds leds(SHIFT_REGISTER_DATA_PIN, SHIFT_REGISTER_CLOCK_PIN, SHIFT_REGISTER_LATCH_PIN);
+    auto lcdBrightnessController = LcdBrightnessController(LCD_BRIGHTNESS_CONTROLLING_PIN);
+#if ARDUINO_AVR_MEGA2560
+    auto comfortLedsBrightnessController = ComfortLedsBrightnessController(COMFORT_LEDS_BRIGHTNESS_CONTROLLING_PIN);
+#endif
+    LedBrightnessController* ledBrightnessControllers[] = {
+        &lcdBrightnessController,
+    #if ARDUINO_AVR_MEGA2560
+        &comfortLedsBrightnessController
+    #endif
+    };
     LedBrightnessRegulator ledBrightnessRegulator(
-        LIGHT_SENSOR_PIN, LED_BRIGHTNESS_CONTROLLING_PINS, UTIL_ARRAY_SIZE(LED_BRIGHTNESS_CONTROLLING_PINS), &scheduler);
+        LIGHT_SENSOR_PIN, ledBrightnessControllers, UTIL_ARRAY_SIZE(ledBrightnessControllers), &scheduler);
+
+    ShiftRegisterLeds leds(SHIFT_REGISTER_DATA_PIN, SHIFT_REGISTER_CLOCK_PIN, SHIFT_REGISTER_LATCH_PIN);
 
     LedGroup temperatureLeds(&leds, 4, 4);
     LedGroup humidityLeds(&leds, 0, 4);

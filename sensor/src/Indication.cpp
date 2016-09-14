@@ -83,28 +83,47 @@ void LedProgressTask::pause() {
 }
 
 
+LedBrightnessController::LedBrightnessController(uint8_t transistorBasePin)
+: pwmPin_(transistorBasePin), pwmValue_(0) {
+    pinMode(pwmPin_, OUTPUT);
+    analogWrite(pwmPin_, pwmValue_);
+}
+
+void LedBrightnessController::onBrightness(uint16_t brightness) {
+    uint8_t pwmValue = this->getPwmValue(brightness);
+    if(pwmValue_ == pwmValue)
+        return;
+
+    analogWrite(pwmPin_, pwmValue);
+    pwmValue_ = pwmValue;
+}
+
+
 LedBrightnessRegulator::LedBrightnessRegulator(
-    uint8_t lightSensorPin, const uint8_t* transistorBasePins, uint8_t transistorBasePinsNum,
+    uint8_t lightSensorPin, LedBrightnessController** controllers, uint8_t controllersNum,
     Util::TaskScheduler* scheduler
-): lightSensorPin_(lightSensorPin), transistorBasePins_(transistorBasePins),
-   transistorBasePinsNum_(transistorBasePinsNum), pwmValue_(1) {
-    #if UTIL_ENABLE_LOGGING
-        lastLogTime_ = 0;
-    #endif
-
+): lightSensorPin_(lightSensorPin), controllersNum_(controllersNum), controllers_(controllers)
+#if UTIL_ENABLE_LOGGING
+    , lastLogTime_(0)
+#endif
+{
     pinMode(lightSensorPin_, INPUT);
-
-    for(uint8_t pinId = 0; pinId < transistorBasePinsNum_; pinId++) {
-        auto pin = transistorBasePins_[pinId];
-        pinMode(pin, OUTPUT);
-        analogWrite(pin, pwmValue_);
-    }
-
     scheduler->addTask(this);
 }
 
 void LedBrightnessRegulator::execute() {
+    this->measureBrightness();
+
+    uint16_t brightness = brightnessHistory_.maxValue();
+    for(uint8_t controllerId = 0; controllerId < controllersNum_; controllerId++)
+        controllers_[controllerId]->onBrightness(brightness);
+
+    this->incrementScheduledTime(60);
+}
+
+void LedBrightnessRegulator::measureBrightness() {
     uint16_t brightness = Constants::ANALOG_HIGH - analogRead(lightSensorPin_);
+    brightnessHistory_.add(brightness);
 
     #if UTIL_ENABLE_LOGGING
         auto curTime = millis();
@@ -113,27 +132,4 @@ void LedBrightnessRegulator::execute() {
             lastLogTime_ = curTime;
         }
     #endif
-
-    // e-Exponential regression calculated by http://keisan.casio.com/exec/system/14059930754231
-    // using the following data (determined experimentally):
-    // 700 5
-    // 800 10
-    // 1000 100
-    double A = 0.705156848;
-    double B = 0.00396581331;
-    double x = brightness;
-    double y = A * pow(M_E, B * x);
-    pwmValues_.add(constrain(y, Constants::PWM_LOW + 1, Constants::PWM_HIGH));
-
-    if(pwmValues_.full()) {
-        uint8_t pwmValue = pwmValues_.maxValue();
-
-        if(pwmValue != pwmValue_) {
-            pwmValue_ = pwmValue;
-            for(uint8_t pinId = 0; pinId < transistorBasePinsNum_; pinId++)
-                analogWrite(transistorBasePins_[pinId], pwmValue);
-        }
-    }
-
-    this->incrementScheduledTime(50);
 }
