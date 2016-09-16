@@ -7,8 +7,6 @@
 #include "MonotonicTime.hpp"
 #include "TaskScheduler.hpp"
 
-#define UTIL_TASK_SCHEDULER_ENABLE_PROFILING 0 // Max task execution time in microseconds
-
 namespace Util {
 
 using Logging::log_critical;
