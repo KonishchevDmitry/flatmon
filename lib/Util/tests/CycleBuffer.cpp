@@ -23,7 +23,7 @@ void compare(B& buffer, const typename B::ValueType* expected) {
     BOOST_REQUIRE(!memcmp(buffer.data(), expected, buffer.capacity() * sizeof(typename B::ValueType)));
 }
 
-BOOST_AUTO_TEST_CASE(add_and_median) {
+BOOST_AUTO_TEST_CASE(addAndMedian) {
     const size_t size = 5;
     int expected[size];
     TestCycleBuffer<int, size> buffer;
@@ -102,4 +102,25 @@ BOOST_AUTO_TEST_CASE(get) {
     BOOST_REQUIRE_EQUAL(buffer[2], 40);
     BOOST_REQUIRE_EQUAL(buffer[3], 50);
     BOOST_REQUIRE_EQUAL(buffer[4], 60);
+}
+
+BOOST_AUTO_TEST_CASE(maxValue) {
+    {
+        TestCycleBuffer<int, 5> buffer;
+
+        for(int value = 0; value < buffer.capacity(); value += 10) {
+            buffer.add(value);
+            BOOST_REQUIRE_EQUAL(buffer.maxValue(), value);
+        }
+    }
+
+    {
+        TestCycleBuffer<int, 5> buffer;
+        int maxValue = (buffer.capacity() - 1) * 10;
+
+        for(int value = maxValue; value >= 0; value -= 10) {
+            buffer.add(value);
+            BOOST_REQUIRE_EQUAL(buffer.maxValue(), maxValue);
+        }
+    }
 }

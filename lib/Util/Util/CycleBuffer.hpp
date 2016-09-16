@@ -82,13 +82,33 @@ class NumericCycleBuffer: public CycleBuffer<T, N> {
         }
 
         ValueType maxValue() {
+            // Note: The method may be implemented in a more readable way, but the following code is optimized for
+            // perfomance.
+
             UTIL_ASSERT(!this->empty());
 
-            size_t size = this->size_;
-            ValueType maxValue = (*this)[0];
+            ValueType* begin = this->items_;
+            ValueType* end = begin + N;
 
-            for(size_t pos = 1; pos < size; pos++) {
-                ValueType value = (*this)[pos];
+            ValueType* first_begin = begin + this->start_;
+            ValueType* first_end = first_begin + this->size_;
+
+            ValueType maxValue = *first_begin++;
+
+            if(first_end > end) {
+                ValueType* second_begin = begin;
+                ValueType* second_end = begin + (first_end - end);
+                first_end = end;
+
+                while(second_begin < second_end) {
+                    ValueType value = *second_begin++;
+                    if(value > maxValue)
+                        maxValue = value;
+                }
+            }
+
+            while(first_begin < first_end) {
+                ValueType value = *first_begin++;
                 if(value > maxValue)
                     maxValue = value;
             }
