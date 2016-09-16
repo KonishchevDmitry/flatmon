@@ -15,6 +15,10 @@ struct TestTask: Task {
     : interval(interval) {
     }
 
+    virtual const FlashChar* getName() {
+        return "Test";
+    }
+
     virtual void execute() {
         times.push_back(MonotonicTime::now().time);
         scheduleAfter(interval);
