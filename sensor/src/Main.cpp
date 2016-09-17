@@ -199,10 +199,14 @@ class WdtResetter: public Util::Task {
         }
 
     public:
-        virtual const FlashChar* getName() { return F("WDT resetter"); }
+        virtual const FlashChar* getName() {
+            return F("WDT resetter");
+        }
+
         virtual void execute() {
+            // Arduino's delay() is actually a busy loop with time checking, so it's OK to make busy loop here by not
+            // scheduling the task for a later time.
             wdt_reset();
-            this->scheduleAfter(10);
         }
 };
 
