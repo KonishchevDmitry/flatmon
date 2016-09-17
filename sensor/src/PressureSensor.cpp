@@ -56,7 +56,7 @@ bool PressureSensor::getPressure(uint16_t* pressure) const {
 
 void PressureSensor::execute() {
     size_t handlerId = size_t(state_);
-    UTIL_ASSERT(handlerId < sizeof stateHandlers_ / sizeof *stateHandlers_);
+    UTIL_ASSERT(handlerId < UTIL_ARRAY_SIZE(stateHandlers_));
     (this->*stateHandlers_[handlerId])();
 }
 
