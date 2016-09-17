@@ -3,6 +3,7 @@
 #include <Util.h>
 #include <Util/Assertion.hpp>
 #include <Util/Constants.hpp>
+#include <Util/Core.hpp>
 #include <Util/Logging.hpp>
 
 #include <Common/SensorMessage.hpp>
@@ -22,15 +23,16 @@ namespace {
 //    Board       Timer  Unusable PWM
 // Arduino Uno   Timer1         9, 10
 // Arduino Mega  Timer1        11, 12
-const int TRANSMITTER_SPEED = 1000;
 const int TRANSMITTER_RX_PIN = 8;
-RH_ASK_RECEIVER RECEIVER(TRANSMITTER_SPEED, TRANSMITTER_RX_PIN);
+RH_ASK_RECEIVER RECEIVER(100, TRANSMITTER_RX_PIN);
 
 }
 
 void setup() {
     Util::Core::init();
     Util::Logging::init();
+
+    Util::Core::registerUsedPin(TRANSMITTER_RX_PIN);
     if(!RECEIVER.init())
         UTIL_LOGICAL_ERROR(F("Failed to initialize the receiver."));
 
