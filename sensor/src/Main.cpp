@@ -180,10 +180,17 @@ class LcdBrightnessController: public ComfortLedsBrightnessController {
         }
 
     protected:
-        // FIXME: Generate custom regression for LCD brightness
         virtual uint8_t getPwmValue(uint16_t brightness) {
-            uint16_t pwmValue = ComfortLedsBrightnessController::getPwmValue(brightness);
-            return constrain(pwmValue + 10, Constants::PWM_LOW + 1, Constants::PWM_HIGH);
+            // e-Exponential regression calculated by http://keisan.casio.com/exec/system/14059930754231
+            // using the following data (determined experimentally):
+            // 1    10
+            // 420  20
+            // 960 150
+            double A = 8.30397457;
+            double B = 0.00286658209;
+            double x = brightness;
+            double y = A * pow(M_E, B * x);
+            return constrain(y, Constants::PWM_LOW + 10, Constants::PWM_HIGH);
         };
 };
 
