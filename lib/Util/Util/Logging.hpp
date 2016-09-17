@@ -22,6 +22,7 @@ namespace Util { namespace Logging {
 
 inline void init(unsigned long speed = 9600) {
 #if UTIL_LOG_LEVEL != UTIL_LOG_LEVEL_DISABLED
+    Util::Core::registerUsedPins(0, 1);
     Serial.begin(speed);
 #endif
 }

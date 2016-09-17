@@ -31,6 +31,21 @@ namespace Util { namespace Core {
     void init();
     size_t getStackFreeMemorySize();
     void stopDevice() __attribute__((__noreturn__));
+
+    void registerUsedPin(uint8_t pin);
+
+    template <typename T>
+    void registerUsedPins(T pin) {
+        registerUsedPin(pin);
+    }
+
+    template <typename T, typename... Pins>
+    void registerUsedPins(T pin, Pins... pins) {
+        registerUsedPin(pin);
+        registerUsedPins(pins...);
+    }
+
+    void configureUnusedPins();
 }}
 
 #endif
