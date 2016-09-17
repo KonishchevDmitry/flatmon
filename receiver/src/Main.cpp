@@ -31,10 +31,13 @@ RH_ASK_RECEIVER RECEIVER(100, TRANSMITTER_RX_PIN);
 void setup() {
     Util::Core::init();
     Util::Logging::init();
+    log_info(F("Initializing..."));
 
     Util::Core::registerUsedPin(TRANSMITTER_RX_PIN);
     if(!RECEIVER.init())
         UTIL_LOGICAL_ERROR(F("Failed to initialize the receiver."));
+
+    Util::Core::configureUnusedPins();
 
     log_info(F("Listening to messages from sensors..."));
 
