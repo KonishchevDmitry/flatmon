@@ -69,11 +69,11 @@ void configureUnusedPins() {
     //
     // Unconnected analog inputs can trigger input MUX circuits ON and badly distort signals from other analog inputs.
 
-    log_debug(F("Configuring the following unused pins:"));
+    log_debug(F("Pulling up the following unused pins:"));
     for(uint8_t pin = 0; pin < NUM_DIGITAL_PINS; pin++) {
         if(!(getPinGroup(pin) & getPinMask(pin))) {
             log_debug(F("* "), pin);
-            // FIXME
+            pinMode(pin, INPUT_PULLUP);
         }
     }
 }
