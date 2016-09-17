@@ -56,10 +56,10 @@ namespace {
 
 Dht22::Dht22(uint8_t dataPin, Util::TaskScheduler* scheduler,
              LedGroup* temperatureLedGroup, LedGroup* humidityLedGroup, Display* display)
-: dataPin_(dataPin), state_(State::start_reading), temperatureComfort_(TemperatureComfort::unknown),
-  temperatureLedGroup_(temperatureLedGroup), temperatureLedProgress_(temperatureLedGroup),
-  humidityComfort_(HumidityComfort::unknown), humidityLedGroup_(humidityLedGroup),
-  humidityLedProgress_(humidityLedGroup), display_(display) {
+: dataPin_(dataPin), state_(State::start_reading), lastReadingFailed_(false),
+  temperatureComfort_(TemperatureComfort::unknown), temperatureLedGroup_(temperatureLedGroup),
+  temperatureLedProgress_(temperatureLedGroup), humidityComfort_(HumidityComfort::unknown),
+  humidityLedGroup_(humidityLedGroup), humidityLedProgress_(humidityLedGroup), display_(display) {
     Util::Core::registerUsedPin(dataPin);
     this->stopReading();
 
@@ -189,6 +189,8 @@ void Dht22::onReading() {
     this->onTemperatureComfort(temperatureComfort);
 
     this->stopReading();
+    lastReadingFailed_ = false;
+
     this->state_ = State::start_reading;
     this->scheduleAfter(POLLING_PERIOD);
 }
@@ -196,13 +198,21 @@ void Dht22::onReading() {
 void Dht22::onError() {
     this->stopReading();
 
-    if(display_) {
-        display_->resetHumidity();
-        display_->resetTemperature();
-    }
+    if(lastReadingFailed_) {
+        // Communication with DHT22 is not 100% stable. From time to time we got errors. Sometimes some interruption
+        // handler affects our time-sensitive code, sometimes may be it's DHT22 error. So always skip the first error
+        // and notify user only on second consecutive errors.
 
-    this->onHumidityComfort(HumidityComfort::unknown);
-    this->onTemperatureComfort(TemperatureComfort::unknown);
+        if(display_) {
+            display_->resetHumidity();
+            display_->resetTemperature();
+        }
+
+        this->onHumidityComfort(HumidityComfort::unknown);
+        this->onTemperatureComfort(TemperatureComfort::unknown);
+    } else {
+        lastReadingFailed_ = true;
+    }
 
     this->state_ = State::start_reading;
     this->scheduleAfter(POLLING_PERIOD);

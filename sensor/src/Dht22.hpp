@@ -45,6 +45,7 @@ class Dht22: public Util::Task {
 
         uint8_t dataPin_;
         State state_;
+        bool lastReadingFailed_;
 
         int8_t temperature_;
         TemperatureComfort temperatureComfort_;
