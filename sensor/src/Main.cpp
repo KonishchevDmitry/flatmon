@@ -306,8 +306,7 @@ void setup() {
 
     #if CONFIG_ENABLE_TRANSMITTER
         Util::Core::registerUsedPin(TRANSMITTER_TX_PIN);
-        // FIXME: Enable transmitter
-        // Transmitter transmitter(&TRANSMITTER, &scheduler, &dht22, &co2Sensor, &pressureSensor);
+        Transmitter transmitter(&TRANSMITTER, &scheduler, &dht22, &co2Sensor, &pressureSensor);
     #endif
 
     initialize();

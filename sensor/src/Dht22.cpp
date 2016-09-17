@@ -2,6 +2,7 @@
 #include <Util/Core.hpp>
 #include <Util/Logging.hpp>
 
+#include "TimeSensitiveTasks.hpp"
 #include "Dht22.hpp"
 
 #define DHT22_ENABLE_PROFILING 0
@@ -13,6 +14,10 @@ using Util::Logging::log_debug;
 namespace Constants = Util::Constants;
 
 enum class Dht22::State: uint8_t {start_reading, reading};
+Dht22::StateHandler Dht22::stateHandlers_[] = {
+    &Dht22::onStartReading,
+    &Dht22::onReading,
+};
 
 typedef Dht22::TemperatureComfort TemperatureComfort;
 enum class Dht22::TemperatureComfort: uint8_t {unknown, cold, normal, warm, hot};
@@ -82,22 +87,20 @@ bool Dht22::getHumidity(uint8_t *humidity) const {
 }
 
 void Dht22::execute() {
-    switch(state_) {
-        case State::start_reading:
-            this->onStartReading();
-            break;
-
-        case State::reading:
-            this->onReading();
-            break;
-
-        default:
-            UTIL_ASSERT(false);
-            break;
-    }
+    size_t handlerId = size_t(state_);
+    UTIL_ASSERT(handlerId < UTIL_ARRAY_SIZE(stateHandlers_));
+    (this->*stateHandlers_[handlerId])();
 }
 
 void Dht22::onStartReading() {
+    if(!TimeSensitiveTasks::acquire(this)) {
+        if(this->isTimedOut(Constants::SECOND_MILLIS)) {
+            log_error(F("DHT22 task has timed out on waiting for a time-sensitive task."));
+            this->onError();
+        }
+        return;
+    }
+
     digitalWrite(dataPin_, LOW);
     this->state_ = State::reading;
     this->scheduleAfter(2);
@@ -315,4 +318,5 @@ bool Dht22::waitForLogicLevel(bool level, TimeMicros timeout) {
 void Dht22::stopReading() {
     pinMode(dataPin_, OUTPUT);
     digitalWrite(dataPin_, HIGH);
+    TimeSensitiveTasks::release(this);
 }

@@ -14,6 +14,7 @@ class Dht22: public Util::Task {
 
     private:
         enum class State: uint8_t;
+        typedef void (Dht22::* StateHandler)();
 
     public:
         Dht22(uint8_t dataPin, Util::TaskScheduler* scheduler,
@@ -40,6 +41,8 @@ class Dht22: public Util::Task {
         void stopReading();
 
     private:
+        static StateHandler stateHandlers_[];
+
         uint8_t dataPin_;
         State state_;
 

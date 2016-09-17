@@ -304,6 +304,10 @@ const char* Co2PwmSensor::getMode() {
 
 
 enum class Co2UartSensor::State: uint8_t {read, reading};
+Co2UartSensor::StateHandler Co2UartSensor::stateHandlers_[] = {
+    &Co2UartSensor::onReadConcentration,
+    &Co2UartSensor::onReadingConcentration,
+};
 
 Co2UartSensor::Co2UartSensor(SensorSerial* sensorSerial, Util::TaskScheduler* scheduler, LedGroup* ledGroup,
                              Display* display, Buzzer* buzzer)
@@ -312,17 +316,9 @@ Co2UartSensor::Co2UartSensor(SensorSerial* sensorSerial, Util::TaskScheduler* sc
 }
 
 void Co2UartSensor::execute() {
-    switch(state_) {
-        case State::read:
-            this->onReadConcentration();
-            break;
-        case State::reading:
-            this->onReadingConcentration();
-            break;
-        default:
-            UTIL_ASSERT(false);
-            break;
-    }
+    size_t handlerId = size_t(state_);
+    UTIL_ASSERT(handlerId < UTIL_ARRAY_SIZE(stateHandlers_));
+    (this->*stateHandlers_[handlerId])();
 }
 
 const char* Co2UartSensor::getMode() {

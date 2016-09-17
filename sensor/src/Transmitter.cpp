@@ -5,6 +5,7 @@
 #include <Common/SensorMessage.hpp>
 
 #include "Config.hpp"
+#include "TimeSensitiveTasks.hpp"
 #include "Transmitter.hpp"
 
 using Util::Logging::log_debug;
@@ -45,6 +46,9 @@ void Transmitter::execute() {
 }
 
 void Transmitter::onSend() {
+    if(!TimeSensitiveTasks::acquire(this))
+        return;
+
     log_debug(F("Sending sensor data..."));
 
     uint8_t temperature = 0;
@@ -102,6 +106,7 @@ void Transmitter::onSending() {
         return;
 
     this->stopTimer();
+    TimeSensitiveTasks::release(this);
 
     state_ = State::send;
     this->scheduleAfter(SENDING_PERIOD);

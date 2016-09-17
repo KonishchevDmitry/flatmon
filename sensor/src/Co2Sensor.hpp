@@ -102,6 +102,7 @@ class Co2UartSensor: public Co2Sensor {
 
     private:
         enum class State: uint8_t;
+        typedef void (Co2UartSensor::* StateHandler)();
         static constexpr int SERIAL_SPEED = 9600;
 
     public:
@@ -120,6 +121,8 @@ class Co2UartSensor: public Co2Sensor {
         void onCommunicationError();
 
     private:
+        static StateHandler stateHandlers_[];
+
         SensorSerial* sensorSerial_;
         State state_;
 
