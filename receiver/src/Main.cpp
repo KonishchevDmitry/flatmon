@@ -24,7 +24,7 @@ namespace {
 // Arduino Uno   Timer1         9, 10
 // Arduino Mega  Timer1        11, 12
 const int TRANSMITTER_RX_PIN = 8;
-RH_ASK_RECEIVER RECEIVER(100, TRANSMITTER_RX_PIN);
+RH_ASK_RECEIVER RECEIVER(2000, TRANSMITTER_RX_PIN);
 
 }
 
