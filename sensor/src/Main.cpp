@@ -144,15 +144,13 @@ Display LCD(LCD_RS_PIN, LCD_E_PIN, LCD_D4_PIN, LCD_D5_PIN, LCD_D6_PIN, LCD_D7_PI
     // Arduino Uno   Timer1         9, 10
     // Arduino Mega  Timer1        11, 12
 
-    const int TRANSMITTER_SPEED = 1000;
-
     #if ARDUINO_AVR_MEGA2560
         const int TRANSMITTER_TX_PIN = 47;
     #else
         const int TRANSMITTER_TX_PIN = 9;
     #endif
 
-    RH_ASK_TRANSMITTER TRANSMITTER(TRANSMITTER_SPEED, TRANSMITTER_TX_PIN);
+    RH_ASK_TRANSMITTER TRANSMITTER(1000, TRANSMITTER_TX_PIN);
 #endif
 
 
@@ -304,7 +302,8 @@ void setup() {
 
     #if CONFIG_ENABLE_TRANSMITTER
         Util::Core::registerUsedPin(TRANSMITTER_TX_PIN);
-        Transmitter transmitter(&TRANSMITTER, &scheduler, &dht22, &co2Sensor, &pressureSensor);
+        // FIXME: Enable transmitter
+        // Transmitter transmitter(&TRANSMITTER, &scheduler, &dht22, &co2Sensor, &pressureSensor);
     #endif
 
     initialize();
