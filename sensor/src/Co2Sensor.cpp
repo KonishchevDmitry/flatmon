@@ -150,6 +150,8 @@ void Co2PwmSensor::init(uint8_t pwmPin) {
         return;
     }
 
+    Util::Core::registerUsedPin(pwmPin);
+
     PWM_PIN_ = pwmPin;
     pinMode(pwmPin, INPUT);
     attachInterrupt(digitalPinToInterrupt(pwmPin), Co2PwmSensor::onPwmValueChanged, CHANGE);

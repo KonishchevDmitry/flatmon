@@ -8,6 +8,7 @@
 
 Buzzer::Buzzer(Util::TaskScheduler* scheduler, uint8_t pin)
 : pin_(pin), state_(State::SILENT) {
+    Util::Core::registerUsedPin(pin);
     pinMode(pin, INPUT);
     scheduler->addTask(this);
     this->pause();

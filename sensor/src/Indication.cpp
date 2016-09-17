@@ -11,6 +11,7 @@ using Util::Logging::log_debug;
 
 ShiftRegisterLeds::ShiftRegisterLeds(uint8_t dataPin, uint8_t clockPin, uint8_t latchPin)
 : dataPin_(dataPin), clockPin_(clockPin), latchPin_(latchPin), value_(0) {
+    Util::Core::registerUsedPins(dataPin, clockPin, latchPin);
     pinMode(dataPin, OUTPUT);
     pinMode(clockPin, OUTPUT);
     pinMode(latchPin, OUTPUT);
@@ -85,6 +86,7 @@ void LedProgressTask::pause() {
 
 LedBrightnessController::LedBrightnessController(uint8_t transistorBasePin)
 : pwmPin_(transistorBasePin), pwmValue_(0) {
+    Util::Core::registerUsedPin(pwmPin_);
     pinMode(pwmPin_, OUTPUT);
     analogWrite(pwmPin_, pwmValue_);
 }
@@ -107,6 +109,7 @@ LedBrightnessRegulator::LedBrightnessRegulator(
     , lastLogTime_(0)
 #endif
 {
+    Util::Core::registerUsedPin(lightSensorPin_);
     pinMode(lightSensorPin_, INPUT);
     scheduler->addTask(this);
 }

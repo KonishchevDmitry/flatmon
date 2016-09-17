@@ -40,6 +40,7 @@ namespace {
 PressureSensor::PressureSensor(Util::TaskScheduler* scheduler, LedGroup* ledGroup, Display* display)
 : state_(State::initialize), pressure_(0), comfort_(Comfort::unknown),
   ledGroup_(ledGroup), ledProgress_(ledGroup), display_(display) {
+    Util::Core::registerUsedPins(SDA, SCL);
     scheduler->addTask(&ledProgress_);
     scheduler->addTask(this);
     this->scheduleAfter(STARTUP_TIME);

@@ -55,6 +55,7 @@ Dht22::Dht22(uint8_t dataPin, Util::TaskScheduler* scheduler,
   temperatureLedGroup_(temperatureLedGroup), temperatureLedProgress_(temperatureLedGroup),
   humidityComfort_(HumidityComfort::unknown), humidityLedGroup_(humidityLedGroup),
   humidityLedProgress_(humidityLedGroup), display_(display) {
+    Util::Core::registerUsedPin(dataPin);
     this->stopReading();
 
     scheduler->addTask(&temperatureLedProgress_);

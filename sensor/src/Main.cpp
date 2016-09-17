@@ -36,19 +36,21 @@ namespace Constants = Util::Constants;
 // RX/TX should be connected to Arduino pins through 5V -> 3.3V logic level shifter
 #if ARDUINO_AVR_MEGA2560
     HardwareSerial* CO2_SENSOR_SERIAL = &Serial3;
+    const int CO2_SENSOR_RX_PIN = 15;
+    const int CO2_SENSOR_TX_PIN = 14;
 #else
     #if CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
+        #include <AltSoftSerial.h>
+        AltSoftSerial SOFTWARE_SERIAL;
+        AltSoftSerial* CO2_SENSOR_SERIAL = &SOFTWARE_SERIAL;
+
         // AltSoftSerial always uses these pins and breaks PWM on the following pins because of timer usage:
         //
         //    Board      TX  RX   Timer  Unusable PWM
         // Arduino Uno    9   8  Timer1            10
         // Arduino Mega  46  48  Timer5        44, 45
-        const int CO2_SENSOR_RX_PIN = 9;
-        const int CO2_SENSOR_TX_PIN = 8;
-
-        #include <AltSoftSerial.h>
-        AltSoftSerial SOFTWARE_SERIAL;
-        AltSoftSerial* CO2_SENSOR_SERIAL = &SOFTWARE_SERIAL;
+        const int CO2_SENSOR_RX_PIN = 8;
+        const int CO2_SENSOR_TX_PIN = 9;
     #else
         const int CO2_SENSOR_PWM_PIN = 2;
     #endif
@@ -219,6 +221,8 @@ void abortHandler(
 }
 
 void initialize() {
+    Util::Core::configureUnusedPins();
+
     size_t freeMemorySize = Util::Core::getStackFreeMemorySize();
     UTIL_ASSERT(freeMemorySize > 100, F("Failed to start: Not enough memory."));
     log_info(F("Free memory size: "), freeMemorySize, F(" bytes."));
@@ -289,6 +293,7 @@ void setup() {
 
     LedGroup co2Leds(&leds, 12, 4);
     #if ARDUINO_AVR_MEGA2560 || CONFIG_CO2_SENSOR_USE_SOFTWARE_SERIAL
+        Util::Core::registerUsedPins(CO2_SENSOR_RX_PIN, CO2_SENSOR_TX_PIN);
         Co2UartSensor co2Sensor(CO2_SENSOR_SERIAL, &scheduler, &co2Leds, &LCD, &buzzer);
     #else
         Co2PwmSensor co2Sensor(CO2_SENSOR_PWM_PIN, &scheduler, &co2Leds, &LCD, &buzzer);
@@ -298,6 +303,7 @@ void setup() {
     PressureSensor pressureSensor(&scheduler, &pressureLeds, &LCD);
 
     #if CONFIG_ENABLE_TRANSMITTER
+        Util::Core::registerUsedPin(TRANSMITTER_TX_PIN);
         Transmitter transmitter(&TRANSMITTER, &scheduler, &dht22, &co2Sensor, &pressureSensor);
     #endif
 

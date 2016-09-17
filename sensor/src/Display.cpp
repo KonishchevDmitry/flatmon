@@ -37,6 +37,7 @@ namespace {
 
 Display::Display(uint8_t rsPin, uint8_t ePin, uint8_t d4Pin, uint8_t d5Pin, uint8_t d6Pin, uint8_t d7Pin)
 : lcd_(rsPin, ePin, d4Pin, d5Pin, d6Pin, d7Pin), dataFlags_(0) {
+    Util::Core::registerUsedPins(rsPin, ePin, d4Pin, d5Pin, d6Pin, d7Pin);
     lcd_.begin(LCD_COLS, LCD_ROWS);
 
     this->resetTemperature(true);
