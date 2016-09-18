@@ -23,8 +23,13 @@ namespace {
 //    Board       Timer  Unusable PWM
 // Arduino Uno   Timer1         9, 10
 // Arduino Mega  Timer1        11, 12
-const int TRANSMITTER_RX_PIN = 8;
-RH_ASK_RECEIVER RECEIVER(2000, TRANSMITTER_RX_PIN);
+#if ARDUINO_AVR_MEGA2560
+    const int TRANSMITTER_RX_PIN = 12;
+#else
+    const int TRANSMITTER_RX_PIN = 9;
+#endif
+
+RH_ASK_RECEIVER RECEIVER(1000, TRANSMITTER_RX_PIN);
 
 }
 
